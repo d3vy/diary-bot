@@ -1,0 +1,7 @@
+spring:
+  application:
+    name: diary-bot
+
+bot:
+  name: atum_diary_bot
+  token: 8243869256:AAEh-UQT_fsQk5RcUZwxHW6qT6drohwGpiA
