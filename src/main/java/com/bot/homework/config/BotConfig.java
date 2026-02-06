@@ -33,4 +33,7 @@ public class BotConfig {
         this.botName = botName;
         this.token = token;
     }
+
+    public BotConfig() {
+    }
 }

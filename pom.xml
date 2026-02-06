@@ -6,7 +6,7 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>4.0.2</version>
+		<version>3.5.7</version>
 		<relativePath/>
 	</parent>
 
@@ -19,7 +19,6 @@
 		<java.version>21</java.version>
         <telegrambots.version>6.9.7.1</telegrambots.version>
         <postgresql.version>42.7.8</postgresql.version>
-        <hibernate.version>6.6.33.Final</hibernate.version>
         <emoji.version>5.1.1</emoji.version>
 	</properties>
 
@@ -41,11 +40,6 @@
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
             <version>${postgresql.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.hibernate.orm</groupId>
-            <artifactId>hibernate-core</artifactId>
-            <version>${hibernate.version}</version>
         </dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>

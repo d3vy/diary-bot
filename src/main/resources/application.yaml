@@ -1,7 +1,18 @@
+bot:
+  name: atum_diary_bot
+  token: 8243869256:AAEh-UQT_fsQk5RcUZwxHW6qT6drohwGpiA
+
 spring:
   application:
     name: diary-bot
 
-bot:
-  name: atum_diary_bot
-  token: 8243869256:AAEh-UQT_fsQk5RcUZwxHW6qT6drohwGpiA
+  datasource:
+    url: jdbc:postgresql://localhost:5432/diary_bot
+    username: postgres
+    password: "!rT8v^Q2m#L5z@J9p*X3w&hF7"
+
+  jpa:
+    show-sql: true
+    hibernate:
+      ddl-auto: update
+      default-schema: public
