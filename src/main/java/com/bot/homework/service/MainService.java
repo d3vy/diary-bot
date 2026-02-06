@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.methods.updatingmessages.DeleteMessage;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
@@ -99,6 +100,19 @@ public class MainService extends TelegramLongPollingBot implements MessageSender
             execute(message);
         } catch (TelegramApiException e) {
             log.error("Send error", e);
+        }
+    }
+
+    @Override
+    public void deleteMessage(Long chatId, Integer messageId) {
+        if (messageId == null) return;
+        DeleteMessage delete = new DeleteMessage();
+        delete.setChatId(chatId.toString());
+        delete.setMessageId(messageId);
+        try {
+            execute(delete);
+        } catch (TelegramApiException e) {
+            log.error("Delete message error", e);
         }
     }
 

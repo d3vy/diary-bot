@@ -8,15 +8,12 @@ import com.bot.homework.registration.UserRole;
 import com.bot.homework.repository.PupilRepository;
 import com.bot.homework.repository.TeacherRepository;
 import org.springframework.context.annotation.Lazy;
-import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardRemove;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
 
 import java.awt.*;
 import java.util.List;
@@ -58,7 +55,7 @@ public class RegistrationService {
                 } else if (text.equals("🎓 Ученик")) {
                     context.setRole(UserRole.PUPIL);
                 } else {
-                    sender.sendMessage(chatId, "Выберите вариант, нажав на кнопку");
+                    this.sender.sendMessage(chatId, "Выберите вариант, нажав на кнопку");
                     return;
                 }
                 context.setStep(RegistrationStep.ENTER_FIRSTNAME);
@@ -140,6 +137,4 @@ public class RegistrationService {
             this.pupilRepository.save(pupil);
         }
     }
-
-
 }
