@@ -15,7 +15,6 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMa
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardRemove;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 
-import java.awt.*;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -29,10 +28,38 @@ public class RegistrationService {
     private final TeacherRepository teacherRepository;
     private final PupilRepository pupilRepository;
 
-    public RegistrationService(@Lazy MessageSender sender, TeacherRepository teacherRepository, PupilRepository pupilRepository) {
+    public RegistrationService(
+            @Lazy MessageSender sender,
+            TeacherRepository teacherRepository,
+            PupilRepository pupilRepository
+    ) {
         this.sender = sender;
         this.teacherRepository = teacherRepository;
         this.pupilRepository = pupilRepository;
+    }
+
+    public void startRegistration(Long telegramId, Long chatId) {
+        RegistrationContext context = new RegistrationContext();
+        context.setStep(RegistrationStep.CHOOSE_ROLE);
+        this.contexts.put(telegramId, context);
+        this.askRole(chatId);
+    }
+
+    public void handleRoleCallback(Long telegramId, Long chatId, String data) {
+        RegistrationContext context = this.contexts.get(telegramId);
+        if (context == null) return;
+        if (context.getStep() != RegistrationStep.CHOOSE_ROLE) return;
+
+        if ("ROLE_TEACHER".equals(data)) {
+            context.setRole(UserRole.TEACHER);
+        } else if ("ROLE_PUPIL".equals(data)) {
+            context.setRole(UserRole.PUPIL);
+        } else {
+            return;
+        }
+
+        context.setStep(RegistrationStep.ENTER_FIRSTNAME);
+        this.sender.sendMessage(chatId, "Введите ваше имя");
     }
 
     public void handle(Message message) {
@@ -40,27 +67,10 @@ public class RegistrationService {
         Long chatId = message.getChatId();
         String text = message.getText();
 
-        RegistrationContext context = this.contexts
-                .computeIfAbsent(telegramId, id -> new RegistrationContext());
+        RegistrationContext context = this.contexts.get(telegramId);
+        if (context == null) return;
 
         switch (context.getStep()) {
-            case NONE -> {
-                context.setStep(RegistrationStep.CHOOSE_ROLE);
-                askRole(chatId);
-            }
-
-            case CHOOSE_ROLE -> {
-                if (text.equals("👨‍🏫 Учитель")) {
-                    context.setRole(UserRole.TEACHER);
-                } else if (text.equals("🎓 Ученик")) {
-                    context.setRole(UserRole.PUPIL);
-                } else {
-                    this.sender.sendMessage(chatId, "Выберите вариант, нажав на кнопку");
-                    return;
-                }
-                context.setStep(RegistrationStep.ENTER_FIRSTNAME);
-                this.sender.sendMessage(chatId, "Введите ваше имя");
-            }
 
             case ENTER_FIRSTNAME -> {
                 context.setFirstname(text);
@@ -71,12 +81,12 @@ public class RegistrationService {
             case ENTER_LASTNAME -> {
                 context.setLastname(text);
                 context.setStep(RegistrationStep.ENTER_PATRONYMIC);
-                this.sender.sendMessage(chatId, "Введите отчество или напишите '-'");
+                this.sender.sendMessage(chatId, "Введите отчество или '-'");
             }
 
             case ENTER_PATRONYMIC -> {
-                context.setPatronymic(text.equals("-") ? null : text);
-                saveUser(telegramId, context);
+                context.setPatronymic("-".equals(text) ? null : text);
+                this.saveUser(telegramId, context);
                 this.contexts.remove(telegramId);
 
                 SendMessage msg = new SendMessage(chatId.toString(), "Вы зарегистрированы ✅");
@@ -86,8 +96,8 @@ public class RegistrationService {
         }
     }
 
-    public RegistrationContext getContext(Long telegramId) {
-        return this.contexts.get(telegramId);
+    public boolean isRegistering(Long telegramId) {
+        return this.contexts.containsKey(telegramId);
     }
 
     public boolean isRegistered(Long telegramId) {
@@ -95,31 +105,27 @@ public class RegistrationService {
                 || this.pupilRepository.existsByTelegramId(telegramId);
     }
 
-    public boolean isRegistering(Long telegramId) {
-        RegistrationContext context = this.contexts.get(telegramId);
-        return context != null && context.getStep() != RegistrationStep.NONE;
-    }
-
     private void askRole(Long chatId) {
         SendMessage message = new SendMessage(chatId.toString(), "Кто вы?");
 
-        InlineKeyboardMarkup keyboard = new InlineKeyboardMarkup();
+        InlineKeyboardButton teacher = new InlineKeyboardButton();
+        teacher.setText("👨‍🏫 Учитель");
+        teacher.setCallbackData("ROLE_TEACHER");
 
-        InlineKeyboardButton teacherButton = new InlineKeyboardButton();
-        teacherButton.setText("👨‍🏫 Учитель");
-        teacherButton.setCallbackData("ROLE_TEACHER");
+        InlineKeyboardButton pupil = new InlineKeyboardButton();
+        pupil.setText("🎓 Ученик");
+        pupil.setCallbackData("ROLE_PUPIL");
 
-        InlineKeyboardButton pupilButton = new InlineKeyboardButton();
-        pupilButton.setText("🎓 Ученик");
-        pupilButton.setCallbackData("ROLE_PUPIL");
-
-        keyboard.setKeyboard(List.of(List.of(teacherButton, pupilButton)));
+        InlineKeyboardMarkup keyboard = new InlineKeyboardMarkup(
+                List.of(List.of(teacher, pupil))
+        );
         message.setReplyMarkup(keyboard);
 
         this.sender.send(message);
     }
 
     private void saveUser(Long telegramId, RegistrationContext context) {
+
         if (context.getRole() == UserRole.TEACHER) {
             Teacher teacher = new Teacher();
             teacher.setTelegramId(telegramId);
@@ -127,8 +133,9 @@ public class RegistrationService {
             teacher.setLastname(context.getLastname());
             teacher.setPatronymic(context.getPatronymic());
             this.teacherRepository.save(teacher);
+        }
 
-        } else if (context.getRole() == UserRole.PUPIL) {
+        if (context.getRole() == UserRole.PUPIL) {
             Pupil pupil = new Pupil();
             pupil.setTelegramId(telegramId);
             pupil.setFirstname(context.getFirstname());

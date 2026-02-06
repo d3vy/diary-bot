@@ -13,15 +13,20 @@ import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
+import java.util.Objects;
+
 @Service
 public class MainService extends TelegramLongPollingBot implements MessageSender {
 
-    private static final Logger log = LoggerFactory.getLogger(MainService.class);
     private final BotConfig config;
     private final StartService startService;
     private final RegistrationService registrationService;
 
-    public MainService(BotConfig config, StartService startService, RegistrationService registrationService) {
+    public MainService(
+            BotConfig config,
+            StartService startService,
+            RegistrationService registrationService
+    ) {
         this.config = config;
         this.startService = startService;
         this.registrationService = registrationService;
@@ -29,68 +34,64 @@ public class MainService extends TelegramLongPollingBot implements MessageSender
 
     @Override
     public String getBotUsername() {
-        return this.config.getBotName();
+        return config.getBotName();
     }
 
     @Override
     public String getBotToken() {
-        return this.config.getToken();
+        return config.getToken();
     }
 
     @Override
     public void onUpdateReceived(Update update) {
-        if (update.hasMessage() && update.getMessage().hasText()) {
-            Message message = update.getMessage();
-            Long telegramId = message.getFrom().getId();
-            Long chatId = message.getChatId();
-            String text = message.getText();
 
-            if (!this.registrationService.isRegistered(telegramId)) {
+        if (update.hasMessage() && update.getMessage().hasText()) {
+            Message msg = update.getMessage();
+            Long telegramId = msg.getFrom().getId();
+            Long chatId = msg.getChatId();
+            String text = msg.getText();
+
+            if (!registrationService.isRegistered(telegramId)) {
+
                 switch (text) {
-                    case "/start" -> this.startService.handleStart(message);
-                    case "/register" -> this.registrationService.handle(message);
+                    case "/start" -> startService.handleStart(msg);
+                    case "/register" -> registrationService.startRegistration(telegramId, chatId);
                     default -> {
-                        if (this.registrationService.isRegistering(telegramId)) {
-                            this.registrationService.handle(message);
+                        if (registrationService.isRegistering(telegramId)) {
+                            registrationService.handle(msg);
                         } else {
-                            sendMessage(chatId, "Сначала зарегистрируйтесь командой /register");
+                            sendMessage(chatId, "Сначала зарегистрируйтесь");
                         }
                     }
                 }
-            } else {
-                switch (text) {
-                    case "/start" -> sendMessage(chatId, "Вы уже зарегистрированы");
-                    default -> sendMessage(chatId, "Unknown command");
-                }
-            }
 
-        } else if (update.hasCallbackQuery()) {
+            } else {
+                sendMessage(chatId, "Вы уже зарегистрированы");
+            }
+        }
+
+        if (update.hasCallbackQuery()) {
             var callback = update.getCallbackQuery();
             Long telegramId = callback.getFrom().getId();
             Long chatId = callback.getMessage().getChatId();
             String data = callback.getData();
 
-            if (this.registrationService.isRegistering(telegramId)) {
-                var context = this.registrationService.getContext(telegramId);
+            switch (data) {
+                case "REGISTER" ->
+                        registrationService.startRegistration(telegramId, chatId);
 
-                if (context.getStep() == RegistrationStep.CHOOSE_ROLE) {
-                    if ("ROLE_TEACHER".equals(data)) context.setRole(UserRole.TEACHER);
-                    else if ("ROLE_PUPIL".equals(data)) context.setRole(UserRole.PUPIL);
-
-                    context.setStep(RegistrationStep.ENTER_FIRSTNAME);
-                    sendMessage(chatId, "Введите ваше имя");
-                }
+                case "ROLE_TEACHER", "ROLE_PUPIL" ->
+                        registrationService.handleRoleCallback(telegramId, chatId, data);
             }
         }
     }
 
     @Override
     public void sendMessage(Long chatId, String text) {
-        SendMessage msg = new SendMessage(chatId.toString(), text);
         try {
-            execute(msg);
+            execute(new SendMessage(chatId.toString(), text));
         } catch (TelegramApiException e) {
-            log.error("Send error", e);
+            throw new RuntimeException(e);
         }
     }
 
@@ -99,21 +100,10 @@ public class MainService extends TelegramLongPollingBot implements MessageSender
         try {
             execute(message);
         } catch (TelegramApiException e) {
-            log.error("Send error", e);
+            throw new RuntimeException(e);
         }
     }
 
     @Override
-    public void deleteMessage(Long chatId, Integer messageId) {
-        if (messageId == null) return;
-        DeleteMessage delete = new DeleteMessage();
-        delete.setChatId(chatId.toString());
-        delete.setMessageId(messageId);
-        try {
-            execute(delete);
-        } catch (TelegramApiException e) {
-            log.error("Delete message error", e);
-        }
-    }
-
+    public void deleteMessage(Long chatId, Integer messageId) {}
 }
