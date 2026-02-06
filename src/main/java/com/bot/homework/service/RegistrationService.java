@@ -87,6 +87,16 @@ public class RegistrationService {
         }
     }
 
+    public boolean isRegistered(Long telegramId) {
+        return this.teacherRepository.existsByTelegramId(telegramId)
+                || this.pupilRepository.existsByTelegramId(telegramId);
+    }
+
+    public boolean isRegistering(Long telegramId) {
+        RegistrationContext context = this.contexts.get(telegramId);
+        return context != null && context.getStep() != RegistrationStep.NONE;
+    }
+
     private void askRole(Long chatId) {
         SendMessage message = new SendMessage(chatId.toString(), "Кто вы?");
 

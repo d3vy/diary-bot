@@ -15,10 +15,6 @@ public class User {
     @Column(unique = true, nullable = false)
     private Long telegramId;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private UserRole role;
-
     public Long getId() {
         return id;
     }
@@ -57,13 +53,5 @@ public class User {
 
     public void setTelegramId(Long telegramId) {
         this.telegramId = telegramId;
-    }
-
-    public UserRole getRole() {
-        return role;
-    }
-
-    public void setRole(UserRole role) {
-        this.role = role;
     }
 }

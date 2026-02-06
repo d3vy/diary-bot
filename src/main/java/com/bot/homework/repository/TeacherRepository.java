@@ -9,4 +9,5 @@ import java.util.Optional;
 @Repository
 public interface TeacherRepository extends JpaRepository<Teacher, Long> {
     Optional<Teacher> findByTelegramId(Long telegramId);
+    boolean existsByTelegramId(Long telegramId);
 }
