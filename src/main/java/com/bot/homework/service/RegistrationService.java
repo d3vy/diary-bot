@@ -12,8 +12,10 @@ import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Message;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardRemove;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
 
 import java.awt.*;
@@ -87,6 +89,10 @@ public class RegistrationService {
         }
     }
 
+    public RegistrationContext getContext(Long telegramId) {
+        return this.contexts.get(telegramId);
+    }
+
     public boolean isRegistered(Long telegramId) {
         return this.teacherRepository.existsByTelegramId(telegramId)
                 || this.pupilRepository.existsByTelegramId(telegramId);
@@ -100,14 +106,17 @@ public class RegistrationService {
     private void askRole(Long chatId) {
         SendMessage message = new SendMessage(chatId.toString(), "Кто вы?");
 
-        ReplyKeyboardMarkup keyboard = new ReplyKeyboardMarkup();
-        keyboard.setResizeKeyboard(true);
+        InlineKeyboardMarkup keyboard = new InlineKeyboardMarkup();
 
-        KeyboardRow row = new KeyboardRow();
-        row.add("👨‍🏫 Учитель");
-        row.add("🎓 Ученик");
+        InlineKeyboardButton teacherButton = new InlineKeyboardButton();
+        teacherButton.setText("👨‍🏫 Учитель");
+        teacherButton.setCallbackData("ROLE_TEACHER");
 
-        keyboard.setKeyboard(List.of(row));
+        InlineKeyboardButton pupilButton = new InlineKeyboardButton();
+        pupilButton.setText("🎓 Ученик");
+        pupilButton.setCallbackData("ROLE_PUPIL");
+
+        keyboard.setKeyboard(List.of(List.of(teacherButton, pupilButton)));
         message.setReplyMarkup(keyboard);
 
         this.sender.send(message);

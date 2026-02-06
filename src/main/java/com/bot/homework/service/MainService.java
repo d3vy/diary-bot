@@ -1,6 +1,8 @@
 package com.bot.homework.service;
 
 import com.bot.homework.config.BotConfig;
+import com.bot.homework.registration.RegistrationStep;
+import com.bot.homework.registration.UserRole;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -57,10 +59,27 @@ public class MainService extends TelegramLongPollingBot implements MessageSender
             } else {
                 switch (text) {
                     case "/start" -> sendMessage(chatId, "Вы уже зарегистрированы");
+                    default -> sendMessage(chatId, "Unknown command");
                 }
             }
 
+        } else if (update.hasCallbackQuery()) {
+            var callback = update.getCallbackQuery();
+            Long telegramId = callback.getFrom().getId();
+            Long chatId = callback.getMessage().getChatId();
+            String data = callback.getData();
 
+            if (this.registrationService.isRegistering(telegramId)) {
+                var context = this.registrationService.getContext(telegramId);
+
+                if (context.getStep() == RegistrationStep.CHOOSE_ROLE) {
+                    if ("ROLE_TEACHER".equals(data)) context.setRole(UserRole.TEACHER);
+                    else if ("ROLE_PUPIL".equals(data)) context.setRole(UserRole.PUPIL);
+
+                    context.setStep(RegistrationStep.ENTER_FIRSTNAME);
+                    sendMessage(chatId, "Введите ваше имя");
+                }
+            }
         }
     }
 
