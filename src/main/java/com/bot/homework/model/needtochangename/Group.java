@@ -1,5 +1,7 @@
-package com.bot.homework.model;
+package com.bot.homework.model.needtochangename;
 
+import com.bot.homework.model.user.Pupil;
+import com.bot.homework.model.user.Teacher;
 import jakarta.persistence.*;
 
 import java.util.Date;

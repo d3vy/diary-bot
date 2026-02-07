@@ -1,10 +1,7 @@
 package com.bot.homework.service;
 
 import com.bot.homework.config.BotConfig;
-import com.bot.homework.registration.RegistrationStep;
-import com.bot.homework.registration.UserRole;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.bot.homework.model.registration.RegistrationContext;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
@@ -13,23 +10,22 @@ import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
-import java.util.Locale;
-import java.util.Objects;
-
 @Service
 public class MainService extends TelegramLongPollingBot implements MessageSender {
 
     private final BotConfig config;
     private final StartService startService;
     private final RegistrationService registrationService;
+    private final MessageEditor messageEditor;
 
     public MainService(
             BotConfig config,
             StartService startService,
-            RegistrationService registrationService) {
+            RegistrationService registrationService, MessageEditor messageEditor) {
         this.config = config;
         this.startService = startService;
         this.registrationService = registrationService;
+        this.messageEditor = messageEditor;
     }
 
     @Override
@@ -51,6 +47,8 @@ public class MainService extends TelegramLongPollingBot implements MessageSender
             Long chatId = msg.getChatId();
             String text = msg.getText();
 
+            this.registrationService.storeMessageId(telegramId, msg.getMessageId());
+
             if (!this.registrationService.isRegistered(telegramId)) {
 
                 switch (text) {
@@ -71,9 +69,13 @@ public class MainService extends TelegramLongPollingBot implements MessageSender
 
         if (update.hasCallbackQuery()) {
             var callback = update.getCallbackQuery();
-            Long telegramId = callback.getFrom().getId();
-            Long chatId = callback.getMessage().getChatId();
             String data = callback.getData();
+            Long telegramId = callback.getFrom().getId();
+            Message message = (Message) callback.getMessage();
+            Long chatId = message.getChatId();
+            Integer messageId = message.getMessageId();
+
+            this.registrationService.storeMessageId(telegramId, messageId);
 
             switch (data) {
                 case "REGISTER" -> this.registrationService.startRegistration(telegramId, chatId);
@@ -98,7 +100,12 @@ public class MainService extends TelegramLongPollingBot implements MessageSender
     @Override
     public void send(SendMessage message) {
         try {
-            execute(message);
+            Message sent = execute(message);
+
+            Long chatId = Long.valueOf(message.getChatId());
+            Integer messageId = sent.getMessageId();
+
+            this.registrationService.storeMessageId(chatId, messageId);
         } catch (TelegramApiException e) {
             throw new RuntimeException(e);
         }
@@ -106,5 +113,10 @@ public class MainService extends TelegramLongPollingBot implements MessageSender
 
     @Override
     public void deleteMessage(Long chatId, Integer messageId) {
+        try {
+            execute(new DeleteMessage(chatId.toString(), messageId));
+        } catch (TelegramApiException ignored) {
+        }
     }
+
 }

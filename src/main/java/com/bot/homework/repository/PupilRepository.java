@@ -1,6 +1,6 @@
 package com.bot.homework.repository;
 
-import com.bot.homework.model.Pupil;
+import com.bot.homework.model.user.Pupil;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

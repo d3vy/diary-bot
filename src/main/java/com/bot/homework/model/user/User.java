@@ -1,28 +1,25 @@
-package com.bot.homework.registration;
+package com.bot.homework.model.user;
 
-public class RegistrationContext {
+import jakarta.persistence.*;
 
-    private UserRole role;
-    private RegistrationStep step = RegistrationStep.NONE;
-
+@MappedSuperclass
+public class User {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
     private String firstname;
     private String lastname;
     private String patronymic;
 
-    public UserRole getRole() {
-        return role;
+    @Column(unique = true, nullable = false)
+    private Long telegramId;
+
+    public Long getId() {
+        return id;
     }
 
-    public void setRole(UserRole role) {
-        this.role = role;
-    }
-
-    public RegistrationStep getStep() {
-        return step;
-    }
-
-    public void setStep(RegistrationStep step) {
-        this.step = step;
+    public void setId(Long id) {
+        this.id = id;
     }
 
     public String getFirstname() {
@@ -47,5 +44,13 @@ public class RegistrationContext {
 
     public void setPatronymic(String patronymic) {
         this.patronymic = patronymic;
+    }
+
+    public Long getTelegramId() {
+        return telegramId;
+    }
+
+    public void setTelegramId(Long telegramId) {
+        this.telegramId = telegramId;
     }
 }

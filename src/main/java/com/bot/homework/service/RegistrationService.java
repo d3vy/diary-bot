@@ -1,12 +1,14 @@
 package com.bot.homework.service;
 
-import com.bot.homework.model.Pupil;
-import com.bot.homework.model.Teacher;
-import com.bot.homework.registration.RegistrationContext;
-import com.bot.homework.registration.RegistrationStep;
-import com.bot.homework.registration.UserRole;
+import com.bot.homework.model.user.Pupil;
+import com.bot.homework.model.user.Teacher;
+import com.bot.homework.model.registration.RegistrationContext;
+import com.bot.homework.model.registration.RegistrationStep;
+import com.bot.homework.model.registration.UserRole;
 import com.bot.homework.repository.PupilRepository;
+import com.bot.homework.repository.RegistrationContextRepository;
 import com.bot.homework.repository.TeacherRepository;
+import jakarta.transaction.Transactional;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
@@ -15,37 +17,44 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMa
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardRemove;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Service
-public class RegistrationService {
-
-    private final Map<Long, RegistrationContext> contexts = new ConcurrentHashMap<>();
+@Transactional
+public class RegistrationService implements MessageEditor {
 
     private final MessageSender sender;
     private final TeacherRepository teacherRepository;
     private final PupilRepository pupilRepository;
+    private final RegistrationContextRepository contextRepository;
 
     public RegistrationService(
             @Lazy MessageSender sender,
             TeacherRepository teacherRepository,
-            PupilRepository pupilRepository) {
+            PupilRepository pupilRepository, RegistrationContextRepository contextRepository) {
         this.sender = sender;
         this.teacherRepository = teacherRepository;
         this.pupilRepository = pupilRepository;
+        this.contextRepository = contextRepository;
     }
 
     public void startRegistration(Long telegramId, Long chatId) {
         RegistrationContext context = new RegistrationContext();
+        context.setTelegramId(telegramId);
         context.setStep(RegistrationStep.CHOOSE_ROLE);
-        this.contexts.put(telegramId, context);
+        context.setMessageIds(new ArrayList<>());
+
+        this.contextRepository.save(context);
         this.askRole(chatId);
     }
 
     public void handleRoleCallback(Long telegramId, Long chatId, String data) {
-        RegistrationContext context = this.contexts.get(telegramId);
+        RegistrationContext context
+                = this.contextRepository.findById(telegramId).orElse(null);
         if (context == null) return;
         if (context.getStep() != RegistrationStep.CHOOSE_ROLE) return;
 
@@ -61,45 +70,12 @@ public class RegistrationService {
         askFirstname(chatId);
     }
 
-    public void handle(Message message) {
-        Long telegramId = message.getFrom().getId();
-        Long chatId = message.getChatId();
-        String text = message.getText();
-
-        RegistrationContext context = this.contexts.get(telegramId);
-        if (context == null) return;
-
-        switch (context.getStep()) {
-
-            case ENTER_FIRSTNAME -> {
-                context.setFirstname(text);
-                context.setStep(RegistrationStep.ENTER_LASTNAME);
-                askLastname(chatId);
-            }
-
-            case ENTER_LASTNAME -> {
-                context.setLastname(text);
-                context.setStep(RegistrationStep.ENTER_PATRONYMIC);
-                askPatronymic(chatId);
-            }
-
-            case ENTER_PATRONYMIC -> {
-                context.setPatronymic("-".equals(text) ? null : text);
-                this.saveUser(telegramId, context);
-                this.contexts.remove(telegramId);
-
-                SendMessage msg = new SendMessage(chatId.toString(), "Вы зарегистрированы ✅");
-                msg.setReplyMarkup(new ReplyKeyboardRemove(true));
-                this.sender.send(msg);
-            }
-        }
-    }
-
     public void handleBackCallback(Long telegramId, Long chatId, String data) {
-        RegistrationContext context = this.contexts.get(telegramId);
+        RegistrationContext context
+                = this.contextRepository.findById(telegramId).orElse(null);
         if (context == null) return;
 
-        switch (data){
+        switch (data) {
             case "BACK_TO_ROLE" -> {
                 context.setStep(RegistrationStep.CHOOSE_ROLE);
                 askRole(chatId);
@@ -116,8 +92,47 @@ public class RegistrationService {
 
     }
 
+    public void handle(Message message) {
+        Long telegramId = message.getFrom().getId();
+        Long chatId = message.getChatId();
+        String text = message.getText();
+
+        RegistrationContext context
+                = this.contextRepository.findById(telegramId).orElse(null);
+        if (context == null) return;
+
+        switch (context.getStep()) {
+
+            case ENTER_FIRSTNAME -> {
+                context.setFirstname(text);
+                context.setStep(RegistrationStep.ENTER_LASTNAME);
+                this.contextRepository.save(context);
+                askLastname(chatId);
+            }
+
+            case ENTER_LASTNAME -> {
+                context.setLastname(text);
+                context.setStep(RegistrationStep.ENTER_PATRONYMIC);
+                this.contextRepository.save(context);
+                askPatronymic(chatId);
+            }
+
+            case ENTER_PATRONYMIC -> {
+                context.setPatronymic("-".equals(text) ? null : text);
+                saveUser(telegramId, context);
+                cleanChat(message.getChatId(), context);
+                this.contextRepository.delete(context);
+
+                SendMessage msg = new SendMessage(chatId.toString(), "Вы зарегистрированы ✅");
+                msg.setReplyMarkup(new ReplyKeyboardRemove(true));
+                this.sender.send(msg);
+            }
+        }
+    }
+
+
     public boolean isRegistering(Long telegramId) {
-        return this.contexts.containsKey(telegramId);
+        return this.contextRepository.findById(telegramId).isPresent();
     }
 
     public boolean isRegistered(Long telegramId) {
@@ -191,6 +206,7 @@ public class RegistrationService {
         this.sender.send(message);
     }
 
+
     private void saveUser(Long telegramId, RegistrationContext context) {
 
         if (context.getRole() == UserRole.TEACHER) {
@@ -209,6 +225,22 @@ public class RegistrationService {
             pupil.setLastname(context.getLastname());
             pupil.setPatronymic(context.getPatronymic());
             this.pupilRepository.save(pupil);
+        }
+    }
+
+    @Override
+    public void storeMessageId(Long telegramId, Integer messageId) {
+        this.contextRepository.findById(telegramId)
+                .ifPresent(ctx -> {
+                    ctx.getMessageIds().add(messageId);
+                    this.contextRepository.save(ctx);
+                });
+    }
+
+    @Override
+    public void cleanChat(Long chatId, RegistrationContext context) {
+        for (Integer msgId : context.getMessageIds()) {
+            this.sender.deleteMessage(chatId, msgId);
         }
     }
 }

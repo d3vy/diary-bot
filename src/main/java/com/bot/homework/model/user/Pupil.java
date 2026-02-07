@@ -1,5 +1,6 @@
-package com.bot.homework.model;
+package com.bot.homework.model.user;
 
+import com.bot.homework.model.needtochangename.Group;
 import jakarta.persistence.*;
 
 import java.util.List;
