@@ -13,6 +13,7 @@ import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
+import java.util.Locale;
 import java.util.Objects;
 
 @Service
@@ -25,8 +26,7 @@ public class MainService extends TelegramLongPollingBot implements MessageSender
     public MainService(
             BotConfig config,
             StartService startService,
-            RegistrationService registrationService
-    ) {
+            RegistrationService registrationService) {
         this.config = config;
         this.startService = startService;
         this.registrationService = registrationService;
@@ -51,20 +51,19 @@ public class MainService extends TelegramLongPollingBot implements MessageSender
             Long chatId = msg.getChatId();
             String text = msg.getText();
 
-            if (!registrationService.isRegistered(telegramId)) {
+            if (!this.registrationService.isRegistered(telegramId)) {
 
                 switch (text) {
-                    case "/start" -> startService.handleStart(msg);
-                    case "/register" -> registrationService.startRegistration(telegramId, chatId);
+                    case "/start" -> this.startService.handleStart(msg);
+                    case "/register" -> this.registrationService.startRegistration(telegramId, chatId);
                     default -> {
-                        if (registrationService.isRegistering(telegramId)) {
-                            registrationService.handle(msg);
+                        if (this.registrationService.isRegistering(telegramId)) {
+                            this.registrationService.handle(msg);
                         } else {
                             sendMessage(chatId, "Сначала зарегистрируйтесь");
                         }
                     }
                 }
-
             } else {
                 sendMessage(chatId, "Вы уже зарегистрированы");
             }
@@ -77,11 +76,12 @@ public class MainService extends TelegramLongPollingBot implements MessageSender
             String data = callback.getData();
 
             switch (data) {
-                case "REGISTER" ->
-                        registrationService.startRegistration(telegramId, chatId);
-
+                case "REGISTER" -> this.registrationService.startRegistration(telegramId, chatId);
                 case "ROLE_TEACHER", "ROLE_PUPIL" ->
-                        registrationService.handleRoleCallback(telegramId, chatId, data);
+                        this.registrationService.handleRoleCallback(telegramId, chatId, data);
+                case "BACK_TO_ROLE", "BACK_TO_FIRSTNAME", "BACK_TO_LASTNAME" ->
+                        this.registrationService.handleBackCallback(telegramId, chatId, data);
+
             }
         }
     }
@@ -105,5 +105,6 @@ public class MainService extends TelegramLongPollingBot implements MessageSender
     }
 
     @Override
-    public void deleteMessage(Long chatId, Integer messageId) {}
+    public void deleteMessage(Long chatId, Integer messageId) {
+    }
 }

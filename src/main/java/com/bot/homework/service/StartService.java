@@ -36,6 +36,6 @@ public class StartService {
         SendMessage msg = new SendMessage(message.getChatId().toString(), text);
         msg.setReplyMarkup(keyboard);
 
-        sender.send(msg);
+        this.sender.send(msg);
     }
 }

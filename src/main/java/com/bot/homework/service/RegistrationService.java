@@ -31,8 +31,7 @@ public class RegistrationService {
     public RegistrationService(
             @Lazy MessageSender sender,
             TeacherRepository teacherRepository,
-            PupilRepository pupilRepository
-    ) {
+            PupilRepository pupilRepository) {
         this.sender = sender;
         this.teacherRepository = teacherRepository;
         this.pupilRepository = pupilRepository;
@@ -59,7 +58,7 @@ public class RegistrationService {
         }
 
         context.setStep(RegistrationStep.ENTER_FIRSTNAME);
-        this.sender.sendMessage(chatId, "Введите ваше имя");
+        askFirstname(chatId);
     }
 
     public void handle(Message message) {
@@ -75,13 +74,13 @@ public class RegistrationService {
             case ENTER_FIRSTNAME -> {
                 context.setFirstname(text);
                 context.setStep(RegistrationStep.ENTER_LASTNAME);
-                this.sender.sendMessage(chatId, "Введите фамилию");
+                askLastname(chatId);
             }
 
             case ENTER_LASTNAME -> {
                 context.setLastname(text);
                 context.setStep(RegistrationStep.ENTER_PATRONYMIC);
-                this.sender.sendMessage(chatId, "Введите отчество или '-'");
+                askPatronymic(chatId);
             }
 
             case ENTER_PATRONYMIC -> {
@@ -96,6 +95,27 @@ public class RegistrationService {
         }
     }
 
+    public void handleBackCallback(Long telegramId, Long chatId, String data) {
+        RegistrationContext context = this.contexts.get(telegramId);
+        if (context == null) return;
+
+        switch (data){
+            case "BACK_TO_ROLE" -> {
+                context.setStep(RegistrationStep.CHOOSE_ROLE);
+                askRole(chatId);
+            }
+            case "BACK_TO_FIRSTNAME" -> {
+                context.setStep(RegistrationStep.ENTER_FIRSTNAME);
+                askFirstname(chatId);
+            }
+            case "BACK_TO_LASTNAME" -> {
+                context.setStep(RegistrationStep.ENTER_LASTNAME);
+                askLastname(chatId);
+            }
+        }
+
+    }
+
     public boolean isRegistering(Long telegramId) {
         return this.contexts.containsKey(telegramId);
     }
@@ -106,7 +126,8 @@ public class RegistrationService {
     }
 
     private void askRole(Long chatId) {
-        SendMessage message = new SendMessage(chatId.toString(), "Кто вы?");
+        String text = "Кто вы?";
+        SendMessage message = new SendMessage(chatId.toString(), text);
 
         InlineKeyboardButton teacher = new InlineKeyboardButton();
         teacher.setText("👨‍🏫 Учитель");
@@ -119,6 +140,52 @@ public class RegistrationService {
         InlineKeyboardMarkup keyboard = new InlineKeyboardMarkup(
                 List.of(List.of(teacher, pupil))
         );
+        message.setReplyMarkup(keyboard);
+
+        this.sender.send(message);
+    }
+
+    private void askFirstname(Long chatId) {
+        SendMessage message = new SendMessage(chatId.toString(), "Введите ваше имя");
+
+        InlineKeyboardButton backButton = new InlineKeyboardButton();
+        backButton.setText("👈 Вернуться");
+        backButton.setCallbackData("BACK_TO_ROLE");
+
+        InlineKeyboardMarkup keyboard =
+                new InlineKeyboardMarkup(List.of(List.of(backButton)));
+
+        message.setReplyMarkup(keyboard);
+
+        this.sender.send(message);
+    }
+
+    private void askLastname(Long chatId) {
+        SendMessage message = new SendMessage(chatId.toString(), "Введите вашу фамилию");
+
+        InlineKeyboardButton backButton = new InlineKeyboardButton();
+        backButton.setText("👈 Вернуться");
+        backButton.setCallbackData("BACK_TO_FIRSTNAME");
+
+        InlineKeyboardMarkup keyboard =
+                new InlineKeyboardMarkup(List.of(List.of(backButton)));
+
+        message.setReplyMarkup(keyboard);
+
+        this.sender.send(message);
+    }
+
+    private void askPatronymic(Long chatId) {
+
+        SendMessage message = new SendMessage(chatId.toString(), "Введите отчество или '-'");
+
+        InlineKeyboardButton backButton = new InlineKeyboardButton();
+        backButton.setText("👈 Вернуться");
+        backButton.setCallbackData("BACK_TO_LASTNAME");
+
+        InlineKeyboardMarkup keyboard =
+                new InlineKeyboardMarkup(List.of(List.of(backButton)));
+
         message.setReplyMarkup(keyboard);
 
         this.sender.send(message);
