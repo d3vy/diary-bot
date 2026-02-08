@@ -15,9 +15,9 @@ public class HelpService {
     public void handle(Long chatId) {
         String text = """
                 You can get this message again by typing /help
-                
-                
-                /command — usage
+             
+                /help — все комманды
+                /edit_personal_info — можете изменить информацию о себе
                 """;
         this.sender.sendMessage(chatId, text);
     }

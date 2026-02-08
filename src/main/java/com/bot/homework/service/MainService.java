@@ -65,7 +65,14 @@ public class MainService extends TelegramLongPollingBot implements MessageSender
             } else {
                 switch (text) {
                     case "/help" -> this.helpService.handle(chatId);
-                    default -> sendMessage(chatId, "Неизвестная комманда 🤔");
+                    case "/edit_personal_info" -> this.registrationService.editPersonalInfo(telegramId, chatId);
+                    default -> {
+                        if (this.registrationService.isEditing(telegramId)) {
+                            this.registrationService.handleEditMessage(msg);
+                        } else {
+                            sendMessage(chatId, "Неизвестная комманда 🤔");
+                        }
+                    }
                 }
             }
         }
@@ -83,7 +90,8 @@ public class MainService extends TelegramLongPollingBot implements MessageSender
                         this.registrationService.handleRoleCallback(telegramId, chatId, data);
                 case "BACK_TO_ROLE", "BACK_TO_FIRSTNAME", "BACK_TO_LASTNAME" ->
                         this.registrationService.handleBackCallback(telegramId, chatId, data);
-
+                case "EDIT_FIRSTNAME", "EDIT_LASTNAME", "EDIT_PATRONYMIC" ->
+                        this.registrationService.handleEditCallback(telegramId, chatId, data);
             }
         }
     }
