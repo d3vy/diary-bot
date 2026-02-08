@@ -1,7 +1,7 @@
 package com.bot.homework.service;
 
-import com.bot.homework.model.registration.edit.EditPersonalInfoContext;
-import com.bot.homework.model.registration.edit.EditPersonalInfoStep;
+import com.bot.homework.model.edit.EditPersonalInfoContext;
+import com.bot.homework.model.edit.EditPersonalInfoStep;
 import com.bot.homework.repository.EditPersonalInfoRepository;
 import com.bot.homework.repository.PupilRepository;
 import com.bot.homework.repository.TeacherRepository;

@@ -1,4 +1,4 @@
-package com.bot.homework.model.registration.edit;
+package com.bot.homework.model.edit;
 
 public enum EditPersonalInfoStep {
     CHOOSE_FIELD,

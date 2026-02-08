@@ -1,12 +1,12 @@
 package com.bot.homework.model.user;
 
-import com.bot.homework.model.needtochangename.Group;
+import com.bot.homework.model.group.Group;
 import jakarta.persistence.*;
 
 import java.util.List;
 
 @Entity
-@Table(schema = "pupils", name = "pupils")
+@Table(schema = "pupil", name = "pupils")
 public class Pupil extends User {
     private Integer grade;
 

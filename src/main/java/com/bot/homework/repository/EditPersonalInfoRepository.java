@@ -1,6 +1,6 @@
 package com.bot.homework.repository;
 
-import com.bot.homework.model.registration.edit.EditPersonalInfoContext;
+import com.bot.homework.model.edit.EditPersonalInfoContext;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

@@ -1,8 +1,7 @@
 package com.bot.homework.model.registration;
 
+import com.bot.homework.model.user.UserRole;
 import jakarta.persistence.*;
-
-import java.util.List;
 
 @Entity
 @Table(schema = "registration", name = "registration_context")

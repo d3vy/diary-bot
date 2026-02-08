@@ -1,12 +1,14 @@
 package com.bot.homework.model.user;
 
-import com.bot.homework.model.needtochangename.Group;
-import jakarta.persistence.*;
+import com.bot.homework.model.group.Group;
+import jakarta.persistence.Entity;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.Table;
 
 import java.util.List;
 
 @Entity
-@Table(schema = "teachers", name = "teachers")
+@Table(schema = "teacher", name = "teachers")
 public class Teacher extends User {
     @OneToMany(mappedBy = "teacher")
     private List<Group> groups;

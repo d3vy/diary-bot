@@ -1,13 +1,10 @@
 package com.bot.homework.service;
 
-import com.bot.homework.model.registration.edit.EditPersonalInfoContext;
-import com.bot.homework.model.registration.edit.EditPersonalInfoStep;
-import com.bot.homework.model.user.Pupil;
-import com.bot.homework.model.user.Teacher;
 import com.bot.homework.model.registration.RegistrationContext;
 import com.bot.homework.model.registration.RegistrationStep;
-import com.bot.homework.model.registration.UserRole;
-import com.bot.homework.repository.EditPersonalInfoRepository;
+import com.bot.homework.model.user.UserRole;
+import com.bot.homework.model.user.Pupil;
+import com.bot.homework.model.user.Teacher;
 import com.bot.homework.repository.PupilRepository;
 import com.bot.homework.repository.RegistrationContextRepository;
 import com.bot.homework.repository.TeacherRepository;
@@ -139,11 +136,6 @@ public class RegistrationService {
 
     public boolean isRegistering(Long telegramId) {
         return this.contextRepository.findById(telegramId).isPresent();
-    }
-
-    public boolean isRegistered(Long telegramId) {
-        return this.teacherRepository.existsByTelegramId(telegramId)
-                || this.pupilRepository.existsByTelegramId(telegramId);
     }
 
     private void askRole(Long chatId) {

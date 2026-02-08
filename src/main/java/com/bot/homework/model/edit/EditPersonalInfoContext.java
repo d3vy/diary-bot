@@ -1,6 +1,6 @@
-package com.bot.homework.model.registration.edit;
+package com.bot.homework.model.edit;
 
-import com.bot.homework.model.registration.UserRole;
+import com.bot.homework.model.user.UserRole;
 import jakarta.persistence.*;
 
 @Entity
