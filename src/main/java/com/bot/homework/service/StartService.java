@@ -1,5 +1,6 @@
 package com.bot.homework.service;
 
+import com.bot.homework.service.utils.MessageSender;
 import com.vdurmont.emoji.EmojiParser;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;

@@ -22,15 +22,6 @@ public class RegistrationContext {
     private String lastname;
     private String patronymic;
 
-    @ElementCollection
-    @CollectionTable(
-            schema = "registration",
-            name = "registration_messages",
-            joinColumns = @JoinColumn(name = "telegram_id")
-    )
-    @Column(name = "message_id")
-    private List<Integer> messageIds;
-
     public UserRole getRole() {
         return role;
     }
@@ -77,13 +68,5 @@ public class RegistrationContext {
 
     public void setTelegramId(Long telegramId) {
         this.telegramId = telegramId;
-    }
-
-    public List<Integer> getMessageIds() {
-        return messageIds;
-    }
-
-    public void setMessageIds(List<Integer> messageIds) {
-        this.messageIds = messageIds;
     }
 }

@@ -8,6 +8,7 @@ import com.bot.homework.model.registration.UserRole;
 import com.bot.homework.repository.PupilRepository;
 import com.bot.homework.repository.RegistrationContextRepository;
 import com.bot.homework.repository.TeacherRepository;
+import com.bot.homework.service.utils.MessageSender;
 import jakarta.transaction.Transactional;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
@@ -17,11 +18,7 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMa
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardRemove;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 @Transactional
@@ -31,23 +28,25 @@ public class RegistrationService {
     private final TeacherRepository teacherRepository;
     private final PupilRepository pupilRepository;
     private final RegistrationContextRepository contextRepository;
+    private final HelpService helpService;
 
     public RegistrationService(
             @Lazy MessageSender sender,
             TeacherRepository teacherRepository,
-            PupilRepository pupilRepository, RegistrationContextRepository contextRepository) {
+            PupilRepository pupilRepository,
+            RegistrationContextRepository contextRepository,
+            HelpService helpService) {
         this.sender = sender;
         this.teacherRepository = teacherRepository;
         this.pupilRepository = pupilRepository;
         this.contextRepository = contextRepository;
+        this.helpService = helpService;
     }
 
     public void startRegistration(Long telegramId, Long chatId) {
         RegistrationContext context = new RegistrationContext();
         context.setTelegramId(telegramId);
         context.setStep(RegistrationStep.CHOOSE_ROLE);
-        context.setMessageIds(new ArrayList<>());
-
         this.contextRepository.save(context);
         this.askRole(chatId);
     }
@@ -126,6 +125,7 @@ public class RegistrationService {
                 SendMessage msg = new SendMessage(chatId.toString(), "Вы зарегистрированы ✅");
                 msg.setReplyMarkup(new ReplyKeyboardRemove(true));
                 this.sender.send(msg);
+                this.helpService.handle(chatId);
             }
         }
     }

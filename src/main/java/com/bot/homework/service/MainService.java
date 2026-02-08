@@ -1,13 +1,12 @@
 package com.bot.homework.service;
 
 import com.bot.homework.config.BotConfig;
-import com.bot.homework.model.registration.RegistrationContext;
+import com.bot.homework.service.utils.MessageSender;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
-import org.telegram.telegrambots.meta.api.methods.updatingmessages.DeleteMessage;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
@@ -19,14 +18,16 @@ public class MainService extends TelegramLongPollingBot implements MessageSender
     private final BotConfig config;
     private final StartService startService;
     private final RegistrationService registrationService;
+    private final HelpService helpService;
 
     public MainService(
             BotConfig config,
             StartService startService,
-            RegistrationService registrationService) {
+            RegistrationService registrationService, HelpService helpService) {
         this.config = config;
         this.startService = startService;
         this.registrationService = registrationService;
+        this.helpService = helpService;
     }
 
     @Override
@@ -62,7 +63,10 @@ public class MainService extends TelegramLongPollingBot implements MessageSender
                     }
                 }
             } else {
-                sendMessage(chatId, "Вы уже зарегистрированы");
+                switch (text) {
+                    case "/help" -> this.helpService.handle(chatId);
+                    default -> sendMessage(chatId, "Неизвестная комманда 🤔");
+                }
             }
         }
 
@@ -101,4 +105,5 @@ public class MainService extends TelegramLongPollingBot implements MessageSender
             log.error("Cannot send the message", e);
         }
     }
+
 }
