@@ -18,15 +18,20 @@ public class MainService extends TelegramLongPollingBot implements MessageSender
     private final BotConfig config;
     private final StartService startService;
     private final RegistrationService registrationService;
+    private final EditPersonalInfoService editService;
     private final HelpService helpService;
 
     public MainService(
             BotConfig config,
             StartService startService,
-            RegistrationService registrationService, HelpService helpService) {
+            RegistrationService registrationService,
+            EditPersonalInfoService editService,
+            HelpService helpService
+    ) {
         this.config = config;
         this.startService = startService;
         this.registrationService = registrationService;
+        this.editService = editService;
         this.helpService = helpService;
     }
 
@@ -65,10 +70,10 @@ public class MainService extends TelegramLongPollingBot implements MessageSender
             } else {
                 switch (text) {
                     case "/help" -> this.helpService.handle(chatId);
-                    case "/edit_personal_info" -> this.registrationService.editPersonalInfo(telegramId, chatId);
+                    case "/edit_personal_info" -> this.editService.editPersonalInfo(telegramId, chatId);
                     default -> {
-                        if (this.registrationService.isEditing(telegramId)) {
-                            this.registrationService.handleEditMessage(msg);
+                        if (this.editService.isEditing(telegramId)) {
+                            this.editService.handleEditMessage(msg);
                         } else {
                             sendMessage(chatId, "Неизвестная комманда 🤔");
                         }
@@ -91,7 +96,7 @@ public class MainService extends TelegramLongPollingBot implements MessageSender
                 case "BACK_TO_ROLE", "BACK_TO_FIRSTNAME", "BACK_TO_LASTNAME" ->
                         this.registrationService.handleBackCallback(telegramId, chatId, data);
                 case "EDIT_FIRSTNAME", "EDIT_LASTNAME", "EDIT_PATRONYMIC" ->
-                        this.registrationService.handleEditCallback(telegramId, chatId, data);
+                        this.editService.handleEditCallback(telegramId, chatId, data);
             }
         }
     }
