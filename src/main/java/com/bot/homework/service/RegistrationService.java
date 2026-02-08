@@ -25,7 +25,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 @Transactional
-public class RegistrationService implements MessageEditor {
+public class RegistrationService {
 
     private final MessageSender sender;
     private final TeacherRepository teacherRepository;
@@ -120,7 +120,7 @@ public class RegistrationService implements MessageEditor {
             case ENTER_PATRONYMIC -> {
                 context.setPatronymic("-".equals(text) ? null : text);
                 saveUser(telegramId, context);
-                cleanChat(message.getChatId(), context);
+
                 this.contextRepository.delete(context);
 
                 SendMessage msg = new SendMessage(chatId.toString(), "Вы зарегистрированы ✅");
@@ -225,22 +225,6 @@ public class RegistrationService implements MessageEditor {
             pupil.setLastname(context.getLastname());
             pupil.setPatronymic(context.getPatronymic());
             this.pupilRepository.save(pupil);
-        }
-    }
-
-    @Override
-    public void storeMessageId(Long telegramId, Integer messageId) {
-        this.contextRepository.findById(telegramId)
-                .ifPresent(ctx -> {
-                    ctx.getMessageIds().add(messageId);
-                    this.contextRepository.save(ctx);
-                });
-    }
-
-    @Override
-    public void cleanChat(Long chatId, RegistrationContext context) {
-        for (Integer msgId : context.getMessageIds()) {
-            this.sender.deleteMessage(chatId, msgId);
         }
     }
 }

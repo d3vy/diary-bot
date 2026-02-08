@@ -24,6 +24,7 @@ public class RegistrationContext {
 
     @ElementCollection
     @CollectionTable(
+            schema = "registration",
             name = "registration_messages",
             joinColumns = @JoinColumn(name = "telegram_id")
     )

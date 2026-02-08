@@ -12,6 +12,7 @@ public class Pupil extends User {
 
     @ManyToMany
     @JoinTable(
+            schema = "pupils",
             name = "pupil_groups",
             joinColumns = @JoinColumn(name = "pupil_id"),
             inverseJoinColumns = @JoinColumn(name = "group_id")
