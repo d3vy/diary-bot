@@ -1,4 +1,4 @@
-package com.bot.homework.repository;
+package com.bot.homework.repository.edit;
 
 import com.bot.homework.model.edit.EditPersonalInfoContext;
 import org.springframework.data.jpa.repository.JpaRepository;

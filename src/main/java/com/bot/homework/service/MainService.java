@@ -2,7 +2,9 @@ package com.bot.homework.service;
 
 import com.bot.homework.config.BotConfig;
 import com.bot.homework.model.user.UserRole;
+import com.bot.homework.service.commands.*;
 import com.bot.homework.service.utils.MessageSender;
+import com.bot.homework.service.utils.UserRoleService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -51,6 +53,7 @@ public class MainService extends TelegramLongPollingBot implements MessageSender
         listOfCommands.add(new BotCommand("/help", "все команды"));
         listOfCommands.add(new BotCommand("/register", "регистрация в боте"));
         listOfCommands.add(new BotCommand("/edit_personal_info", "изменить информацию, введенную при регистрации"));
+        listOfCommands.add(new BotCommand("/create_group", "(только для учителей) создание учебной группы"));
 
         try {
             this.execute(new SetMyCommands(listOfCommands, new BotCommandScopeDefault(), null));
@@ -95,9 +98,12 @@ public class MainService extends TelegramLongPollingBot implements MessageSender
                 switch (text) {
                     case "/help" -> this.helpService.handle(chatId);
                     case "/edit_personal_info" -> this.editService.editPersonalInfo(telegramId, chatId);
+                    case "/create_group" -> this.groupService.startGroupCreation(telegramId, chatId);
                     default -> {
                         if (this.editService.isEditing(telegramId)) {
                             this.editService.handleEditMessage(msg);
+                        } else if (this.groupService.isCreating(telegramId)) {
+                            this.groupService.handle(msg);
                         } else {
                             sendMessage(chatId, "Неизвестная комманда 🤔");
                         }
@@ -107,7 +113,6 @@ public class MainService extends TelegramLongPollingBot implements MessageSender
                 switch (text) {
                     case "/help" -> this.helpService.handle(chatId);
                     case "/edit_personal_info" -> this.editService.editPersonalInfo(telegramId, chatId);
-                    case "/create_group" -> this.groupService.createGroup(telegramId, chatId);
                     default -> {
                         if (this.editService.isEditing(telegramId)) {
                             this.editService.handleEditMessage(msg);

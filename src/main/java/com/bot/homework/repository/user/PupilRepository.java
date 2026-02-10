@@ -1,4 +1,4 @@
-package com.bot.homework.repository;
+package com.bot.homework.repository.user;
 
 import com.bot.homework.model.user.Pupil;
 import org.springframework.data.jpa.repository.JpaRepository;

@@ -1,10 +1,10 @@
-package com.bot.homework.service;
+package com.bot.homework.service.commands;
 
 import com.bot.homework.model.edit.EditPersonalInfoContext;
 import com.bot.homework.model.edit.EditPersonalInfoStep;
-import com.bot.homework.repository.EditPersonalInfoRepository;
-import com.bot.homework.repository.PupilRepository;
-import com.bot.homework.repository.TeacherRepository;
+import com.bot.homework.repository.edit.EditPersonalInfoRepository;
+import com.bot.homework.repository.user.PupilRepository;
+import com.bot.homework.repository.user.TeacherRepository;
 import com.bot.homework.service.utils.MessageSender;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;

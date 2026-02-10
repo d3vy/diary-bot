@@ -1,9 +1,9 @@
-package com.bot.homework.service;
+package com.bot.homework.service.utils;
 
-import com.bot.homework.model.user.UserRole;
 import com.bot.homework.model.user.User;
-import com.bot.homework.repository.PupilRepository;
-import com.bot.homework.repository.TeacherRepository;
+import com.bot.homework.model.user.UserRole;
+import com.bot.homework.repository.user.PupilRepository;
+import com.bot.homework.repository.user.TeacherRepository;
 import org.springframework.stereotype.Service;
 
 @Service

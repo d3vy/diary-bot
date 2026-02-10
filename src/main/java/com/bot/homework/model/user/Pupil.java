@@ -12,12 +12,12 @@ public class Pupil extends User {
 
     @ManyToMany
     @JoinTable(
-            schema = "pupils",
-            name = "pupil_groups",
+            schema = "pupil",
+            name = "pupil_study_group",
             joinColumns = @JoinColumn(name = "pupil_id"),
-            inverseJoinColumns = @JoinColumn(name = "group_id")
+            inverseJoinColumns = @JoinColumn(name = "study_group_id")
     )
-    private List<Group> groups;
+    private List<Group> studyGroups;
 
     public Integer getGrade() {
         return grade;
@@ -27,19 +27,19 @@ public class Pupil extends User {
         this.grade = grade;
     }
 
-    public List<Group> getGroups() {
-        return groups;
+    public List<Group> getStudyGroups() {
+        return studyGroups;
     }
 
-    public void setGroups(List<Group> groups) {
-        this.groups = groups;
+    public void setStudyGroups(List<Group> studyGroups) {
+        this.studyGroups = studyGroups;
     }
 
     public Pupil() {
     }
 
-    public Pupil(Integer grade, List<Group> groups) {
+    public Pupil(Integer grade, List<Group> studyGroups) {
         this.grade = grade;
-        this.groups = groups;
+        this.studyGroups = studyGroups;
     }
 }

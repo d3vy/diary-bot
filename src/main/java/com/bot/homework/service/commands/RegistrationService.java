@@ -1,13 +1,13 @@
-package com.bot.homework.service;
+package com.bot.homework.service.commands;
 
 import com.bot.homework.model.registration.RegistrationContext;
 import com.bot.homework.model.registration.RegistrationStep;
-import com.bot.homework.model.user.UserRole;
 import com.bot.homework.model.user.Pupil;
 import com.bot.homework.model.user.Teacher;
-import com.bot.homework.repository.PupilRepository;
-import com.bot.homework.repository.RegistrationContextRepository;
-import com.bot.homework.repository.TeacherRepository;
+import com.bot.homework.model.user.UserRole;
+import com.bot.homework.repository.registration.RegistrationContextRepository;
+import com.bot.homework.repository.user.PupilRepository;
+import com.bot.homework.repository.user.TeacherRepository;
 import com.bot.homework.service.utils.MessageSender;
 import jakarta.transaction.Transactional;
 import org.slf4j.Logger;

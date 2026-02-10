@@ -1,4 +1,4 @@
-package com.bot.homework.service;
+package com.bot.homework.service.commands;
 
 import com.bot.homework.service.utils.MessageSender;
 import org.springframework.context.annotation.Lazy;

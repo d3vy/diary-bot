@@ -1,4 +1,4 @@
-package com.bot.homework.repository;
+package com.bot.homework.repository.registration;
 
 import com.bot.homework.model.registration.RegistrationContext;
 import org.springframework.data.jpa.repository.JpaRepository;

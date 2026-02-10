@@ -4,28 +4,26 @@ import com.bot.homework.model.user.Pupil;
 import com.bot.homework.model.user.Teacher;
 import jakarta.persistence.*;
 
-import java.time.LocalDate;
-import java.time.LocalTime;
 import java.util.List;
 
 @Entity
-@Table(schema = "groups", name = "groups")
+@Table(schema = "study_group", name = "study_groups")
 public class Group {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
-    private Integer number;
+    private String number;
     private String subject;
-    private LocalTime startOfLessonTime;
+    private String startOfLessonTime;
     private String name;
     private String homework;
-    private LocalDate homeworkDate;
+    private String homeworkDate;
 
     @ManyToOne
-    @JoinColumn(name = "teacher_id", nullable = false)
+    @JoinColumn(name = "teacherId", nullable = false)
     private Teacher teacher;
 
-    @ManyToMany(mappedBy = "groups")
+    @ManyToMany(mappedBy = "studyGroups")
     private List<Pupil> pupils;
 
 
@@ -45,11 +43,11 @@ public class Group {
         this.homework = homework;
     }
 
-    public LocalDate getHomeworkDate() {
+    public String getHomeworkDate() {
         return homeworkDate;
     }
 
-    public void setHomeworkDate(LocalDate homeworkDate) {
+    public void setHomeworkDate(String homeworkDate) {
         this.homeworkDate = homeworkDate;
     }
 
@@ -69,11 +67,11 @@ public class Group {
         this.pupils = pupils;
     }
 
-    public Integer getNumber() {
+    public String getNumber() {
         return number;
     }
 
-    public void setNumber(Integer number) {
+    public void setNumber(String number) {
         this.number = number;
     }
 
@@ -85,11 +83,11 @@ public class Group {
         this.name = name;
     }
 
-    public LocalTime getStartOfLessonTime() {
+    public String getStartOfLessonTime() {
         return startOfLessonTime;
     }
 
-    public void setStartOfLessonTime(LocalTime startOfLessonTime) {
+    public void setStartOfLessonTime(String startOfLessonTime) {
         this.startOfLessonTime = startOfLessonTime;
     }
 
@@ -98,14 +96,14 @@ public class Group {
 
     public Group(
             Integer id,
-            Integer number,
-            String subject,
-            LocalTime startOfLessonTime,
-            String name,
-            String homework,
-            LocalDate homeworkDate,
             Teacher teacher,
-            List<Pupil> pupils
+            List<Pupil> pupils,
+            String number,
+            String name,
+            String subject,
+            String startOfLessonTime,
+            String homework,
+            String homeworkDate
     ) {
         this.id = id;
         this.number = number;
