@@ -3,11 +3,14 @@ package com.bot.homework.service.commands;
 import com.bot.homework.model.group.Group;
 import com.bot.homework.model.group.GroupCreationContext;
 import com.bot.homework.model.group.GroupCreationStep;
+import com.bot.homework.model.user.Pupil;
 import com.bot.homework.model.user.Teacher;
 import com.bot.homework.repository.group.GroupCreationContextRepository;
 import com.bot.homework.repository.group.GroupRepository;
+import com.bot.homework.repository.user.PupilRepository;
 import com.bot.homework.repository.user.TeacherRepository;
 import com.bot.homework.service.utils.MessageSender;
+import jakarta.transaction.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Lazy;
@@ -22,17 +25,20 @@ public class GroupService {
     private static final Logger log = LoggerFactory.getLogger(GroupService.class);
     private final GroupRepository groupRepository;
     private final TeacherRepository teacherRepository;
+    private final PupilRepository pupilRepository;
     private final GroupCreationContextRepository contextRepository;
     private final MessageSender sender;
 
     public GroupService(
             GroupRepository groupRepository,
             TeacherRepository teacherRepository,
+            PupilRepository pupilRepository,
             GroupCreationContextRepository contextRepository,
             @Lazy MessageSender sender
     ) {
         this.groupRepository = groupRepository;
         this.teacherRepository = teacherRepository;
+        this.pupilRepository = pupilRepository;
         this.contextRepository = contextRepository;
         this.sender = sender;
     }
@@ -90,10 +96,6 @@ public class GroupService {
         return this.contextRepository.existsById(telegramId);
     }
 
-    // addPupilToGroup
-    // deletePupilFromGroup
-    // addHomework
-
     private void askNumber(Long chatId) {
         String text = "Введите номер группы";
         SendMessage message = new SendMessage(chatId.toString(), text);
@@ -120,6 +122,62 @@ public class GroupService {
         SendMessage message = new SendMessage(chatId.toString(), text);
 
         this.sender.send(message);
+    }
+
+    @Transactional
+    public void addPupilToGroup(Long teacherId, Integer groupId, String pupilFullName) {
+
+        Pupil pupil = this.pupilRepository.findByFullName(pupilFullName)
+                .orElseThrow(() -> new IllegalArgumentException("Pupil not found"));
+
+        Group group = this.groupRepository.findById(groupId)
+                .orElseThrow(() -> new IllegalArgumentException("Group not found"));
+
+        if (!group.getTeacher().getId().equals(teacherId)) {
+            throw new IllegalStateException("It's not the teacher's group");
+        }
+
+        group.getPupils().add(pupil);
+    }
+
+    @Transactional
+    public void joinGroup(Long pupilId, Integer groupId, boolean isPermittedToJoin) {
+
+        if (!isPermittedToJoin) {
+            throw new IllegalStateException("Joining is not permitted");
+        }
+
+        PupilGroup pg = getPupilAndGroup(pupilId, groupId);
+        pg.group().getPupils().add(pg.pupil());
+    }
+
+    @Transactional
+    public void deletePupilFromGroup(Long teacherId, Integer groupId, Long pupilId) {
+
+        PupilGroup pg = getPupilAndGroup(pupilId, groupId);
+        Group group = pg.group();
+        Pupil pupil = pg.pupil();
+
+        if (!group.getTeacher().getId().equals(teacherId)) {
+            throw new IllegalStateException("It's not the teacher's group");
+        }
+
+        if (!group.getPupils().remove(pupil)) {
+            throw new IllegalArgumentException("Pupil not in group");
+        }
+    }
+
+    private PupilGroup getPupilAndGroup(Long pupilId, Integer groupId) {
+        Pupil pupil = this.pupilRepository.findByTelegramId(pupilId)
+                .orElseThrow(() -> new IllegalArgumentException("Pupil not found"));
+
+        Group group = this.groupRepository.findById(groupId)
+                .orElseThrow(() -> new IllegalArgumentException("Group not found"));
+
+        return new PupilGroup(pupil, group);
+    }
+
+    private record PupilGroup(Pupil pupil, Group group) {
     }
 
     private void saveGroup(Long telegramId, GroupCreationContext context) {
