@@ -3,10 +3,13 @@ package com.bot.homework.service.commands;
 import com.bot.homework.model.group.Group;
 import com.bot.homework.model.group.GroupCreationContext;
 import com.bot.homework.model.group.GroupCreationStep;
-import com.bot.homework.model.user.Pupil;
+import com.bot.homework.model.user.pupil.AddPupilContext;
+import com.bot.homework.model.user.pupil.AddPupilStep;
+import com.bot.homework.model.user.pupil.Pupil;
 import com.bot.homework.model.user.Teacher;
 import com.bot.homework.repository.group.GroupCreationContextRepository;
 import com.bot.homework.repository.group.GroupRepository;
+import com.bot.homework.repository.user.AddPupilContextRepository;
 import com.bot.homework.repository.user.PupilRepository;
 import com.bot.homework.repository.user.TeacherRepository;
 import com.bot.homework.service.utils.MessageSender;
@@ -26,20 +29,23 @@ public class GroupService {
     private final GroupRepository groupRepository;
     private final TeacherRepository teacherRepository;
     private final PupilRepository pupilRepository;
-    private final GroupCreationContextRepository contextRepository;
+    private final GroupCreationContextRepository groupCreationContextRepository;
+    private final AddPupilContextRepository addPupilContextRepository;
     private final MessageSender sender;
 
     public GroupService(
             GroupRepository groupRepository,
             TeacherRepository teacherRepository,
             PupilRepository pupilRepository,
-            GroupCreationContextRepository contextRepository,
+            GroupCreationContextRepository groupCreationContextRepository,
+            AddPupilContextRepository addPupilContextRepository,
             @Lazy MessageSender sender
     ) {
         this.groupRepository = groupRepository;
         this.teacherRepository = teacherRepository;
         this.pupilRepository = pupilRepository;
-        this.contextRepository = contextRepository;
+        this.groupCreationContextRepository = groupCreationContextRepository;
+        this.addPupilContextRepository = addPupilContextRepository;
         this.sender = sender;
     }
 
@@ -47,17 +53,17 @@ public class GroupService {
         GroupCreationContext context = new GroupCreationContext();
         context.setTelegramId(telegramId);
         context.setStep(GroupCreationStep.ASK_NUMBER);
-        this.contextRepository.save(context);
+        this.groupCreationContextRepository.save(context);
         askNumber(chatId);
     }
 
-    public void handle(Message message) {
+    public void handleGroupCreation(Message message) {
         Long telegramId = message.getFrom().getId();
         Long chatId = message.getChatId();
         String text = message.getText();
 
         GroupCreationContext context
-                = this.contextRepository.findById(telegramId).orElse(null);
+                = this.groupCreationContextRepository.findById(telegramId).orElse(null);
 
         if (context == null) return;
 
@@ -65,25 +71,25 @@ public class GroupService {
             case ASK_NUMBER -> {
                 context.setNumber(text);
                 context.setStep(GroupCreationStep.ASK_NAME);
-                this.contextRepository.save(context);
+                this.groupCreationContextRepository.save(context);
                 askName(chatId);
             }
             case ASK_NAME -> {
                 context.setName(text);
                 context.setStep(GroupCreationStep.ASK_SUBJECT);
-                this.contextRepository.save(context);
+                this.groupCreationContextRepository.save(context);
                 askSubject(chatId);
             }
             case ASK_SUBJECT -> {
                 context.setSubject(text);
                 context.setStep(GroupCreationStep.ASK_START_TIME);
-                this.contextRepository.save(context);
+                this.groupCreationContextRepository.save(context);
                 askStartTime(chatId);
             }
             case ASK_START_TIME -> {
                 context.setStartTime(text);
                 saveGroup(telegramId, context);
-                this.contextRepository.delete(context);
+                this.groupCreationContextRepository.delete(context);
 
                 SendMessage msg = new SendMessage(chatId.toString(), "Группа создана ✅");
                 msg.setReplyMarkup(new ReplyKeyboardRemove(true));
@@ -93,7 +99,7 @@ public class GroupService {
     }
 
     public boolean isCreating(Long telegramId) {
-        return this.contextRepository.existsById(telegramId);
+        return this.groupCreationContextRepository.existsById(telegramId);
     }
 
     private void askNumber(Long chatId) {
@@ -125,16 +131,49 @@ public class GroupService {
     }
 
     @Transactional
-    public void addPupilToGroup(Long teacherId, Integer groupId, String pupilFullName) {
+    public void startAddPupilToGroup(Long teacherId, Long chatId) {
+        AddPupilContext context = new AddPupilContext();
+        context.setTeacherId(teacherId);
+        context.setChatId(chatId);
+        context.setStep(AddPupilStep.WAIT_PUPIL_FULL_NAME);
 
-        Pupil pupil = this.pupilRepository.findByFullName(pupilFullName)
+        this.addPupilContextRepository.save(context);
+        this.sender.sendMessage(chatId, "Введите ФИО ученика");
+    }
+
+    public Boolean isAddingPupilToGroup(Long teacherId) {
+        return this.addPupilContextRepository.existsById(teacherId);
+    }
+
+    @Transactional
+    public void handleAddPupilToGroup(Message msg) {
+        Long teacherId = msg.getFrom().getId();
+        AddPupilContext context = this.addPupilContextRepository.findById(teacherId)
+                .orElseThrow(() -> new IllegalArgumentException("Context is not found"));
+
+        switch (context.getStep()) {
+            case WAIT_PUPIL_FULL_NAME -> {
+                context.setPupilFullName(msg.getText());
+                context.setStep(AddPupilStep.WAIT_GROUP_NAME);
+                this.sender.sendMessage(context.getChatId(), "Введите название группы");
+            }
+            case WAIT_GROUP_NAME -> {
+                context.setGroupName(msg.getText());
+                finish(context);
+                this.addPupilContextRepository.delete(context);
+            }
+        }
+    }
+
+    private void finish(AddPupilContext ctx) {
+        Pupil pupil = this.pupilRepository.findByFullName(ctx.getPupilFullName())
                 .orElseThrow(() -> new IllegalArgumentException("Pupil not found"));
 
-        Group group = this.groupRepository.findById(groupId)
+        Group group = this.groupRepository.findByName(ctx.getGroupName())
                 .orElseThrow(() -> new IllegalArgumentException("Group not found"));
 
-        if (!group.getTeacher().getId().equals(teacherId)) {
-            throw new IllegalStateException("It's not the teacher's group");
+        if (!group.getTeacher().getId().equals(ctx.getTeacherId())) {
+            throw new IllegalStateException("Это не ваша группа");
         }
 
         group.getPupils().add(pupil);

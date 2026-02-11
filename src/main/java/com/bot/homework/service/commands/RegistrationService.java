@@ -2,7 +2,7 @@ package com.bot.homework.service.commands;
 
 import com.bot.homework.model.registration.RegistrationContext;
 import com.bot.homework.model.registration.RegistrationStep;
-import com.bot.homework.model.user.Pupil;
+import com.bot.homework.model.user.pupil.Pupil;
 import com.bot.homework.model.user.Teacher;
 import com.bot.homework.model.user.UserRole;
 import com.bot.homework.repository.registration.RegistrationContextRepository;

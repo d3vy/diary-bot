@@ -99,11 +99,14 @@ public class MainService extends TelegramLongPollingBot implements MessageSender
                     case "/help" -> this.helpService.handle(chatId);
                     case "/edit_personal_info" -> this.editService.editPersonalInfo(telegramId, chatId);
                     case "/create_group" -> this.groupService.startGroupCreation(telegramId, chatId);
+                    case "/add_pupil_to_group" -> this.groupService.startAddPupilToGroup(telegramId, chatId);
                     default -> {
                         if (this.editService.isEditing(telegramId)) {
                             this.editService.handleEditMessage(msg);
                         } else if (this.groupService.isCreating(telegramId)) {
-                            this.groupService.handle(msg);
+                            this.groupService.handleGroupCreation(msg);
+                        } else if (this.groupService.isAddingPupilToGroup(telegramId)) {
+                            this.groupService.handleAddPupilToGroup(msg);
                         } else {
                             sendMessage(chatId, "Неизвестная комманда 🤔");
                         }

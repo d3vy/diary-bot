@@ -1,6 +1,7 @@
-package com.bot.homework.model.user;
+package com.bot.homework.model.user.pupil;
 
 import com.bot.homework.model.group.Group;
+import com.bot.homework.model.user.User;
 import jakarta.persistence.*;
 
 import java.util.List;

@@ -1,6 +1,6 @@
 package com.bot.homework.repository.user;
 
-import com.bot.homework.model.user.Pupil;
+import com.bot.homework.model.user.pupil.Pupil;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
