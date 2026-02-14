@@ -1,6 +1,7 @@
 package com.bot.homework.service;
 
 import com.bot.homework.config.BotConfig;
+import com.bot.homework.model.subject.Subject;
 import com.bot.homework.model.user.UserRole;
 import com.bot.homework.service.commands.*;
 import com.bot.homework.service.utils.MessageSender;
@@ -54,6 +55,7 @@ public class MainService extends TelegramLongPollingBot implements MessageSender
         listOfCommands.add(new BotCommand("/register", "регистрация в боте"));
         listOfCommands.add(new BotCommand("/edit_personal_info", "изменить информацию, введенную при регистрации"));
         listOfCommands.add(new BotCommand("/create_group", "(только для учителей) создание учебной группы"));
+        listOfCommands.add(new BotCommand("/show_join_requests", "(только для учителей) заявки на вступление в группы"));
 
         try {
             this.execute(new SetMyCommands(listOfCommands, new BotCommandScopeDefault(), null));
@@ -100,6 +102,7 @@ public class MainService extends TelegramLongPollingBot implements MessageSender
                     case "/edit_personal_info" -> this.editService.editPersonalInfo(telegramId, chatId);
                     case "/create_group" -> this.groupService.startGroupCreation(telegramId, chatId);
                     case "/add_pupil_to_group" -> this.groupService.startAddPupilToGroup(telegramId, chatId);
+                    case "/show_join_requests" -> this.groupService.showJoinGroupRequests(telegramId, chatId);
                     default -> {
                         if (this.editService.isEditing(telegramId)) {
                             this.editService.handleEditMessage(msg);
@@ -116,6 +119,7 @@ public class MainService extends TelegramLongPollingBot implements MessageSender
                 switch (text) {
                     case "/help" -> this.helpService.handle(chatId);
                     case "/edit_personal_info" -> this.editService.editPersonalInfo(telegramId, chatId);
+                    case "/join_group" -> this.groupService.askGroupToJoinSubject(chatId);
                     default -> {
                         if (this.editService.isEditing(telegramId)) {
                             this.editService.handleEditMessage(msg);
@@ -133,16 +137,41 @@ public class MainService extends TelegramLongPollingBot implements MessageSender
             Long telegramId = callback.getFrom().getId();
             Message message = (Message) callback.getMessage();
             Long chatId = message.getChatId();
+            UserRole role = this.userRoleService.defineUserRoleByTelegramId(telegramId);
 
-            switch (data) {
-                case "REGISTER" -> this.registrationService.startRegistration(telegramId, chatId);
-                case "ROLE_TEACHER", "ROLE_PUPIL" ->
-                        this.registrationService.handleRoleCallback(telegramId, chatId, data);
-                case "BACK_TO_ROLE", "BACK_TO_FIRSTNAME", "BACK_TO_LASTNAME" ->
-                        this.registrationService.handleBackCallback(telegramId, chatId, data);
-                case "EDIT_FIRSTNAME", "EDIT_LASTNAME", "EDIT_PATRONYMIC" ->
-                        this.editService.handleEditCallback(telegramId, chatId, data);
+            if (role == UserRole.NOT_REGISTERED) {
+                switch (data) {
+                    case "REGISTER" -> this.registrationService.startRegistration(telegramId, chatId);
+                    case "ROLE_TEACHER", "ROLE_PUPIL" ->
+                            this.registrationService.handleRoleCallback(telegramId, chatId, data);
+                    case "BACK_TO_ROLE", "BACK_TO_FIRSTNAME", "BACK_TO_LASTNAME" ->
+                            this.registrationService.handleBackCallback(telegramId, chatId, data);
+                    case "EDIT_FIRSTNAME", "EDIT_LASTNAME", "EDIT_PATRONYMIC" ->
+                            this.editService.handleEditCallback(telegramId, chatId, data);
+                }
+            } else if (role == UserRole.TEACHER) {
+                if (data.startsWith("APPROVE_")) {
+                    Integer requestId = Integer.parseInt(data.replace("APPROVE_", ""));
+                    this.groupService.approveRequest(requestId);
+                }
+
+                if (data.startsWith("REJECT_")) {
+                    Integer requestId = Integer.parseInt(data.replace("REJECT_", ""));
+                    this.groupService.rejectRequest(requestId);
+                }
+            } else if (role == UserRole.PUPIL) {
+                if (data.startsWith("SUBJECT_")) {
+                    Integer subjectId = Integer.parseInt(data.replace("SUBJECT_", ""));
+                    Subject subject = this.groupService.getSubjectById(subjectId);
+                    this.groupService.showAllGroupsBySubject(subject, chatId);
+                }
+
+                if (data.startsWith("JOIN_GROUP_")) {
+                    Integer groupId = Integer.parseInt(data.replace("JOIN_GROUP_", ""));
+                    this.groupService.createJoinRequest(telegramId, groupId, chatId);
+                }
             }
+
         }
     }
 

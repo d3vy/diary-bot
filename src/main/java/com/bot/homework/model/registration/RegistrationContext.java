@@ -2,6 +2,7 @@ package com.bot.homework.model.registration;
 
 import com.bot.homework.model.user.UserRole;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
 
 @Entity
 @Table(schema = "registration", name = "registration_context")
@@ -17,8 +18,13 @@ public class RegistrationContext {
     @Enumerated(EnumType.STRING)
     private UserRole role;
 
+    @NotNull
     private String firstname;
+
+    @NotNull
     private String lastname;
+
+    @NotNull
     private String patronymic;
 
     public UserRole getRole() {

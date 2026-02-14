@@ -1,5 +1,6 @@
 package com.bot.homework.model.group;
 
+import com.bot.homework.model.subject.Subject;
 import com.bot.homework.model.user.Teacher;
 import jakarta.persistence.*;
 
@@ -13,7 +14,11 @@ public class GroupCreationContext {
     GroupCreationStep step;
     String number;
     String name;
-    String subject;
+
+    @ManyToOne
+    @JoinColumn(name = "subject_id")
+    Subject subject;
+
     String startTime;
     @ManyToOne
     @JoinColumn(name = "teacher_id")
@@ -32,7 +37,7 @@ public class GroupCreationContext {
             GroupCreationStep step,
             String number,
             String name,
-            String subject,
+            Subject subject,
             String startTime,
             Teacher teacher
     ) {
@@ -72,11 +77,11 @@ public class GroupCreationContext {
         this.name = name;
     }
 
-    public String getSubject() {
+    public Subject getSubject() {
         return subject;
     }
 
-    public void setSubject(String subject) {
+    public void setSubject(Subject subject) {
         this.subject = subject;
     }
 

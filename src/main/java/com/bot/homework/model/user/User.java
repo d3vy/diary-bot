@@ -1,14 +1,21 @@
 package com.bot.homework.model.user;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
 
 @MappedSuperclass
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @NotNull
     private String firstname;
+
+    @NotNull
     private String lastname;
+
+    @NotNull
     private String patronymic;
 
     @Column(unique = true, nullable = false)

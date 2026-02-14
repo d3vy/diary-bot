@@ -1,8 +1,10 @@
 package com.bot.homework.model.group;
 
+import com.bot.homework.model.subject.Subject;
 import com.bot.homework.model.user.pupil.Pupil;
 import com.bot.homework.model.user.Teacher;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
 
 import java.util.List;
 
@@ -12,13 +14,24 @@ public class Group {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
+
+    @NotNull
     private String number;
-    private String subject;
+
+    @ManyToOne
+    @JoinColumn(name = "subject_id")
+    private Subject subject;
+
+    @NotNull
     private String startOfLessonTime;
+
+    @NotNull
     private String name;
+
     private String homework;
     private String homeworkDate;
 
+    @NotNull
     @ManyToOne
     @JoinColumn(name = "teacherId", nullable = false)
     private Teacher teacher;
@@ -100,7 +113,7 @@ public class Group {
             List<Pupil> pupils,
             String number,
             String name,
-            String subject,
+            Subject subject,
             String startOfLessonTime,
             String homework,
             String homeworkDate
@@ -116,11 +129,11 @@ public class Group {
         this.pupils = pupils;
     }
 
-    public String getSubject() {
+    public Subject getSubject() {
         return subject;
     }
 
-    public void setSubject(String subject) {
+    public void setSubject(Subject subject) {
         this.subject = subject;
     }
 }
