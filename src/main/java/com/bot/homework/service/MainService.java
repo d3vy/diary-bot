@@ -54,8 +54,11 @@ public class MainService extends TelegramLongPollingBot implements MessageSender
         listOfCommands.add(new BotCommand("/help", "все команды"));
         listOfCommands.add(new BotCommand("/register", "регистрация в боте"));
         listOfCommands.add(new BotCommand("/edit_personal_info", "изменить информацию, введенную при регистрации"));
-        listOfCommands.add(new BotCommand("/create_group", "(только для учителей) создание учебной группы"));
-        listOfCommands.add(new BotCommand("/show_join_requests", "(только для учителей) заявки на вступление в группы"));
+        listOfCommands.add(new BotCommand("/join_group", "(ученик) отправить заявку на вступление в группу"));
+        listOfCommands.add(new BotCommand("/add_pupil_to_group", "(учитель) добавить ученика у группу"));
+        listOfCommands.add(new BotCommand("/remove_pupil", "(учитель) удалить ученика из группы"));
+        listOfCommands.add(new BotCommand("/create_group", "(учитель) создание учебной группы"));
+        listOfCommands.add(new BotCommand("/show_join_requests", "(учитель) просмотреть заявки на вступление в группы"));
 
         try {
             this.execute(new SetMyCommands(listOfCommands, new BotCommandScopeDefault(), null));
@@ -103,6 +106,7 @@ public class MainService extends TelegramLongPollingBot implements MessageSender
                     case "/create_group" -> this.groupService.startGroupCreation(telegramId, chatId);
                     case "/add_pupil_to_group" -> this.groupService.startAddPupilToGroup(telegramId, chatId);
                     case "/show_join_requests" -> this.groupService.showJoinGroupRequests(telegramId, chatId);
+                    case "/remove_pupil" -> this.groupService.showAllGroupsByTeacherId(telegramId, chatId);
                     default -> {
                         if (this.editService.isEditing(telegramId)) {
                             this.editService.handleEditMessage(msg);
@@ -158,6 +162,18 @@ public class MainService extends TelegramLongPollingBot implements MessageSender
                 if (data.startsWith("REJECT_")) {
                     Integer requestId = Integer.parseInt(data.replace("REJECT_", ""));
                     this.groupService.rejectRequest(requestId);
+                }
+
+                if (data.startsWith("VIEW_PUPIL_IN_GROUP_")) {
+                    Integer groupId = Integer.parseInt(data.replace("VIEW_PUPIL_IN_GROUP_", ""));
+                    this.groupService.showAllPupilsInGroupByGroupId(groupId, chatId);
+                }
+
+                if (data.startsWith("REMOVE_PUPIL_")) {
+                    String[] parts = data.split("_");
+                    Integer groupId = Integer.parseInt(parts[2]);
+                    Long pupilId = Long.parseLong(parts[3]);
+                    this.groupService.removePupilFromGroup(groupId, pupilId, telegramId, chatId);
                 }
             } else if (role == UserRole.PUPIL) {
                 if (data.startsWith("SUBJECT_")) {

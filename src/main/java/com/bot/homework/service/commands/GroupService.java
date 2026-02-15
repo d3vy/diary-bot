@@ -222,25 +222,32 @@ public class GroupService {
 
 
     public void showAllGroupsBySubject(Subject subject, Long chatId) {
-        String text = "Группу по какому предмету хотите найти?";
-        SendMessage message = new SendMessage(chatId.toString(), text);
+
         List<Group> groups = this.groupRepository.findBySubject(subject);
-        List<InlineKeyboardButton> buttons = new ArrayList<>();
+
+        if (groups.isEmpty()) {
+            this.sender.sendMessage(chatId, "По этому предмету групп пока нет");
+            return;
+        }
+
+        SendMessage message = new SendMessage(chatId.toString(), "Выберите группу:");
+
+        List<List<InlineKeyboardButton>> rows = new ArrayList<>();
 
         for (Group group : groups) {
             InlineKeyboardButton button = new InlineKeyboardButton();
             button.setText(group.getName());
             button.setCallbackData("JOIN_GROUP_" + group.getId());
-            buttons.add(button);
+
+            rows.add(List.of(button));
         }
 
         InlineKeyboardMarkup keyboard = new InlineKeyboardMarkup();
-        keyboard.setKeyboard(List.of(buttons));
+        keyboard.setKeyboard(rows);
 
         message.setReplyMarkup(keyboard);
 
         this.sender.send(message);
-
     }
 
     public Subject getSubjectById(Integer subjectId) {
@@ -363,6 +370,94 @@ public class GroupService {
             throw new IllegalArgumentException("Pupil not in group");
         }
     }
+
+    public void showAllGroupsByTeacherId(Long telegramId, Long chatId) {
+        List<Group> groups = this.groupRepository.findByTeacherTelegramId(telegramId);
+
+        if (groups.isEmpty()) {
+            this.sender.sendMessage(chatId, "У вас пока нет групп");
+            return;
+        }
+
+        SendMessage message = new SendMessage(chatId.toString(), "Выберите группу");
+
+        List<List<InlineKeyboardButton>> rows = new ArrayList<>();
+
+        for (Group group : groups) {
+            InlineKeyboardButton button = new InlineKeyboardButton();
+            button.setText(group.getName());
+            button.setCallbackData("VIEW_PUPILS_IN_GROUP_" + group.getId());
+
+            rows.add(List.of(button));
+        }
+
+        InlineKeyboardMarkup keyboard = new InlineKeyboardMarkup();
+        keyboard.setKeyboard(rows);
+
+        message.setReplyMarkup(keyboard);
+
+        this.sender.send(message);
+    }
+
+    public void showAllPupilsInGroupByGroupId(Integer groupId, Long chatId) {
+        List<Pupil> pupils = this.pupilRepository.findByStudyGroupsId(groupId);
+
+        if (pupils.isEmpty()) {
+            this.sender.sendMessage(chatId, "В этой группе нет учеников");
+            return;
+        }
+
+        SendMessage message = new SendMessage(chatId.toString(), "Выберите ученика, чтобы удалить его");
+
+        List<List<InlineKeyboardButton>> rows = new ArrayList<>();
+
+        for (Pupil pupil : pupils) {
+            InlineKeyboardButton button = new InlineKeyboardButton();
+            String patronymic = pupil.getPatronymic();
+            String fullName = pupil.getFirstname() + " " + pupil.getLastname() +
+                    (patronymic != null && !patronymic.isBlank()
+                            ? " " + patronymic
+                            : "");
+            button.setText(fullName);
+            button.setCallbackData("REMOVE_PUPIL_" + groupId + "_" + pupil.getTelegramId());
+
+            rows.add(List.of(button));
+        }
+
+        InlineKeyboardMarkup keyboard = new InlineKeyboardMarkup();
+        keyboard.setKeyboard(rows);
+
+        message.setReplyMarkup(keyboard);
+
+        this.sender.send(message);
+
+    }
+
+    @Transactional
+    public void removePupilFromGroup(Integer groupId, Long pupilId, Long teacherId, Long chatId) {
+
+        PupilGroup pg = getPupilAndGroup(pupilId, groupId);
+        Pupil pupil = pg.pupil();
+        Group group = pg.group();
+
+
+        if (!group.getTeacher().getTelegramId().equals(teacherId)) {
+            throw new IllegalStateException("Это не ваша группа");
+        }
+
+        if (!group.getPupils().remove(pupil)) {
+            throw new IllegalArgumentException("Ученик не состоит в группе");
+        }
+
+        this.sender.sendMessage(chatId, "Ученик удалён из группы ✅");
+    }
+
+    // @Transactional
+    //public void removePupilFromGroup(Integer groupId, Long pupilId, Long teacherId, Long chatId) {
+    //    // Просто удаляем связь в join-таблице
+    //    this.pupilRepository.removeFromGroup(pupilId, groupId);
+    //    this.sender.sendMessage(chatId, "Ученик удалён из группы ✅");
+    //}
 
     private PupilGroup getPupilAndGroup(Long pupilId, Integer groupId) {
         Pupil pupil = this.pupilRepository.findByTelegramId(pupilId)
