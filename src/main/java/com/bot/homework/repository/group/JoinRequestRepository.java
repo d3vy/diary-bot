@@ -8,6 +8,6 @@ import java.util.List;
 
 @Repository
 public interface JoinRequestRepository extends JpaRepository<JoinRequest, Integer> {
-    List<JoinRequest> findByGroupTeacherId(Long teacherId);
+    List<JoinRequest> findByGroupTeacherTelegramId(Long teacherId);
     Boolean existsByPupilTelegramIdAndGroupId(Long pupilId, Integer groupId);
 }

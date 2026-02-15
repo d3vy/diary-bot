@@ -99,7 +99,7 @@ public class GroupService {
             }
             case ASK_SUBJECT -> {
                 Subject subject = this.subjectRepository.findByNameIgnoreCase(text).orElseThrow(
-                        () -> new IllegalArgumentException("Group is not found")
+                        () -> new IllegalArgumentException("Subject is not found")
                 );
                 context.setSubject(subject);
                 context.setStep(GroupCreationStep.ASK_START_TIME);
@@ -273,7 +273,7 @@ public class GroupService {
     }
 
     public void showJoinGroupRequests(Long teacherId, Long chatId) {
-        List<JoinRequest> requests = this.joinRequestRepository.findByGroupTeacherId(teacherId);
+        List<JoinRequest> requests = this.joinRequestRepository.findByGroupTeacherTelegramId(teacherId);
 
         if (requests.isEmpty()) {
             this.sender.sendMessage(chatId, "Нет новых заявок");
