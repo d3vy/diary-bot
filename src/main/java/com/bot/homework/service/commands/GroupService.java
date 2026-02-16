@@ -330,6 +330,7 @@ public class GroupService {
 
         Pupil pupil = request.getPupil();
         Group group = request.getGroup();
+        pupil.getStudyGroups().add(group);
         group.getPupils().add(pupil);
 
         this.joinRequestRepository.delete(request);
@@ -337,6 +338,7 @@ public class GroupService {
                 request.getGroup().getTeacher().getTelegramId(),
                 request.getGroup().getTeacher().getTelegramId()
         );
+
     }
 
     @Transactional
@@ -400,7 +402,10 @@ public class GroupService {
     }
 
     public void showAllPupilsInGroupByGroupId(Integer groupId, Long chatId) {
-        List<Pupil> pupils = this.pupilRepository.findByStudyGroupsId(groupId);
+
+        Group group = this.groupRepository.findByIdWithPupils(groupId)
+                .orElseThrow(() -> new IllegalArgumentException("Group not found"));
+        List<Pupil> pupils = group.getPupils();
 
         if (pupils.isEmpty()) {
             this.sender.sendMessage(chatId, "В этой группе нет учеников");
@@ -445,19 +450,13 @@ public class GroupService {
             throw new IllegalStateException("Это не ваша группа");
         }
 
-        if (!group.getPupils().remove(pupil)) {
+        if (!pupil.getStudyGroups().remove(group)) {
             throw new IllegalArgumentException("Ученик не состоит в группе");
         }
 
+        group.getPupils().remove(pupil);
         this.sender.sendMessage(chatId, "Ученик удалён из группы ✅");
     }
-
-    // @Transactional
-    //public void removePupilFromGroup(Integer groupId, Long pupilId, Long teacherId, Long chatId) {
-    //    // Просто удаляем связь в join-таблице
-    //    this.pupilRepository.removeFromGroup(pupilId, groupId);
-    //    this.sender.sendMessage(chatId, "Ученик удалён из группы ✅");
-    //}
 
     private PupilGroup getPupilAndGroup(Long pupilId, Integer groupId) {
         Pupil pupil = this.pupilRepository.findByTelegramId(pupilId)

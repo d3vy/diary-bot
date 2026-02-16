@@ -164,8 +164,8 @@ public class MainService extends TelegramLongPollingBot implements MessageSender
                     this.groupService.rejectRequest(requestId);
                 }
 
-                if (data.startsWith("VIEW_PUPIL_IN_GROUP_")) {
-                    Integer groupId = Integer.parseInt(data.replace("VIEW_PUPIL_IN_GROUP_", ""));
+                if (data.startsWith("VIEW_PUPILS_IN_GROUP_")) {
+                    Integer groupId = Integer.parseInt(data.replace("VIEW_PUPILS_IN_GROUP_", ""));
                     this.groupService.showAllPupilsInGroupByGroupId(groupId, chatId);
                 }
 
