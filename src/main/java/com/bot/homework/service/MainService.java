@@ -1,7 +1,7 @@
 package com.bot.homework.service;
 
 import com.bot.homework.config.BotConfig;
-import com.bot.homework.model.subject.Subject;
+import com.bot.homework.model.Subject;
 import com.bot.homework.model.user.UserRole;
 import com.bot.homework.service.commands.*;
 import com.bot.homework.service.utils.MessageSender;
@@ -32,6 +32,7 @@ public class MainService extends TelegramLongPollingBot implements MessageSender
     private final HelpService helpService;
     private final UserRoleService userRoleService;
     private final GroupService groupService;
+    private final HomeworkService homeworkService;
 
     public MainService(
             BotConfig config,
@@ -40,7 +41,8 @@ public class MainService extends TelegramLongPollingBot implements MessageSender
             EditPersonalInfoService editService,
             HelpService helpService,
             UserRoleService userRoleService,
-            GroupService groupService
+            GroupService groupService,
+            HomeworkService homeworkService
     ) {
         this.config = config;
         this.startService = startService;
@@ -49,6 +51,7 @@ public class MainService extends TelegramLongPollingBot implements MessageSender
         this.helpService = helpService;
         this.userRoleService = userRoleService;
         this.groupService = groupService;
+        this.homeworkService = homeworkService;
 
         List<BotCommand> listOfCommands = new ArrayList<>();
         listOfCommands.add(new BotCommand("/help", "все команды"));
@@ -59,7 +62,8 @@ public class MainService extends TelegramLongPollingBot implements MessageSender
         listOfCommands.add(new BotCommand("/remove_pupil", "(учитель) удалить ученика из группы"));
         listOfCommands.add(new BotCommand("/create_group", "(учитель) создание учебной группы"));
         listOfCommands.add(new BotCommand("/show_join_requests", "(учитель) просмотреть заявки на вступление в группы"));
-
+        listOfCommands.add(new BotCommand("/homework", "(ученик) просмотреть все домашние задания"));
+        listOfCommands.add(new BotCommand("/set_homework", "(учитель) задать домашнее задание"));
         try {
             this.execute(new SetMyCommands(listOfCommands, new BotCommandScopeDefault(), null));
         } catch (TelegramApiException e) {
@@ -104,9 +108,11 @@ public class MainService extends TelegramLongPollingBot implements MessageSender
                     case "/help" -> this.helpService.handle(chatId);
                     case "/edit_personal_info" -> this.editService.editPersonalInfo(telegramId, chatId);
                     case "/create_group" -> this.groupService.startGroupCreation(telegramId, chatId);
-                    case "/add_pupil_to_group" -> this.groupService.startAddPupilToGroup(telegramId, chatId);
+                    case "/add_pupil_to_group" ->
+                            this.groupService.startAddPupilToGroup(telegramId, chatId); // такой себе
                     case "/show_join_requests" -> this.groupService.showJoinGroupRequests(telegramId, chatId);
                     case "/remove_pupil" -> this.groupService.showAllGroupsByTeacherId(telegramId, chatId);
+                    case "/set_homework" -> this.homeworkService.askGroupForSettingHomework(telegramId, chatId);
                     default -> {
                         if (this.editService.isEditing(telegramId)) {
                             this.editService.handleEditMessage(msg);
@@ -114,6 +120,8 @@ public class MainService extends TelegramLongPollingBot implements MessageSender
                             this.groupService.handleGroupCreation(msg);
                         } else if (this.groupService.isAddingPupilToGroup(telegramId)) {
                             this.groupService.handleAddPupilToGroup(msg);
+                        } else if (this.homeworkService.isSettingHomework(telegramId)) {
+                            this.homeworkService.handleHomeworkInput(telegramId, chatId, text);
                         } else {
                             sendMessage(chatId, "Неизвестная комманда 🤔");
                         }
@@ -124,6 +132,7 @@ public class MainService extends TelegramLongPollingBot implements MessageSender
                     case "/help" -> this.helpService.handle(chatId);
                     case "/edit_personal_info" -> this.editService.editPersonalInfo(telegramId, chatId);
                     case "/join_group" -> this.groupService.askGroupToJoinSubject(chatId);
+                    case "/homework" -> this.homeworkService.showHomework(telegramId, chatId);
                     default -> {
                         if (this.editService.isEditing(telegramId)) {
                             this.editService.handleEditMessage(msg);
@@ -174,6 +183,11 @@ public class MainService extends TelegramLongPollingBot implements MessageSender
                     Integer groupId = Integer.parseInt(parts[2]);
                     Long pupilId = Long.parseLong(parts[3]);
                     this.groupService.removePupilFromGroup(groupId, pupilId, telegramId, chatId);
+                }
+
+                if (data.startsWith("HOMEWORK_FOR_GROUP_")) {
+                    Integer groupId = Integer.parseInt(data.replace("HOMEWORK_FOR_GROUP_", ""));
+                    this.homeworkService.askHomeworkTask(telegramId, groupId, chatId);
                 }
             } else if (role == UserRole.PUPIL) {
                 if (data.startsWith("SUBJECT_")) {

@@ -1,4 +1,4 @@
-package com.bot.homework.model.subject;
+package com.bot.homework.model;
 
 import com.bot.homework.model.group.Group;
 import jakarta.persistence.*;

@@ -5,7 +5,7 @@ import com.bot.homework.model.group.GroupCreationContext;
 import com.bot.homework.model.group.GroupCreationStep;
 import com.bot.homework.model.group.join.JoinRequest;
 import com.bot.homework.model.group.join.JoinRequestStatus;
-import com.bot.homework.model.subject.Subject;
+import com.bot.homework.model.Subject;
 import com.bot.homework.model.user.pupil.AddPupilContext;
 import com.bot.homework.model.user.pupil.AddPupilStep;
 import com.bot.homework.model.user.pupil.Pupil;
@@ -354,23 +354,6 @@ public class GroupService {
                 request.getGroup().getTeacher().getTelegramId(),
                 request.getGroup().getTeacher().getTelegramId()
         );
-    }
-
-
-    @Transactional
-    public void deletePupilFromGroup(Long teacherId, Integer groupId, Long pupilId) {
-
-        PupilGroup pg = getPupilAndGroup(pupilId, groupId);
-        Group group = pg.group();
-        Pupil pupil = pg.pupil();
-
-        if (!group.getTeacher().getId().equals(teacherId)) {
-            throw new IllegalStateException("It's not the teacher's group");
-        }
-
-        if (!group.getPupils().remove(pupil)) {
-            throw new IllegalArgumentException("Pupil not in group");
-        }
     }
 
     public void showAllGroupsByTeacherId(Long telegramId, Long chatId) {

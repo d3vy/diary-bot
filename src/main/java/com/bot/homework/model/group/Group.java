@@ -1,6 +1,6 @@
 package com.bot.homework.model.group;
 
-import com.bot.homework.model.subject.Subject;
+import com.bot.homework.model.Subject;
 import com.bot.homework.model.user.pupil.Pupil;
 import com.bot.homework.model.user.Teacher;
 import jakarta.persistence.*;
