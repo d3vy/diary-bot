@@ -128,7 +128,6 @@ public class RegistrationService {
                 SendMessage msg = new SendMessage(chatId.toString(), "Вы зарегистрированы ✅");
                 msg.setReplyMarkup(new ReplyKeyboardRemove(true));
                 this.sender.send(msg);
-                this.helpService.handle(chatId);
             }
         }
     }

@@ -139,7 +139,6 @@ public class EditPersonalInfoService {
     private void finishEdit(EditPersonalInfoContext context, Long chatId) {
         editRepository.delete(context);
         sender.send(new SendMessage(chatId.toString(), "Данные обновлены ✅"));
-        helpService.handle(chatId);
     }
 
     public void editPersonalInfo(Long telegramId, Long chatId) {

@@ -33,6 +33,9 @@ public class MainService extends TelegramLongPollingBot implements MessageSender
     private final UserRoleService userRoleService;
     private final GroupService groupService;
     private final HomeworkService homeworkService;
+    private final CommandService commandService;
+
+
 
     public MainService(
             BotConfig config,
@@ -42,7 +45,8 @@ public class MainService extends TelegramLongPollingBot implements MessageSender
             HelpService helpService,
             UserRoleService userRoleService,
             GroupService groupService,
-            HomeworkService homeworkService
+            HomeworkService homeworkService,
+            CommandService commandService
     ) {
         this.config = config;
         this.startService = startService;
@@ -52,23 +56,7 @@ public class MainService extends TelegramLongPollingBot implements MessageSender
         this.userRoleService = userRoleService;
         this.groupService = groupService;
         this.homeworkService = homeworkService;
-
-        List<BotCommand> listOfCommands = new ArrayList<>();
-        listOfCommands.add(new BotCommand("/help", "все команды"));
-        listOfCommands.add(new BotCommand("/register", "регистрация в боте"));
-        listOfCommands.add(new BotCommand("/edit_personal_info", "изменить информацию, введенную при регистрации"));
-        listOfCommands.add(new BotCommand("/join_group", "(ученик) отправить заявку на вступление в группу"));
-        listOfCommands.add(new BotCommand("/add_pupil_to_group", "(учитель) добавить ученика у группу"));
-        listOfCommands.add(new BotCommand("/remove_pupil", "(учитель) удалить ученика из группы"));
-        listOfCommands.add(new BotCommand("/create_group", "(учитель) создание учебной группы"));
-        listOfCommands.add(new BotCommand("/show_join_requests", "(учитель) просмотреть заявки на вступление в группы"));
-        listOfCommands.add(new BotCommand("/homework", "(ученик) просмотреть все домашние задания"));
-        listOfCommands.add(new BotCommand("/set_homework", "(учитель) задать домашнее задание"));
-        try {
-            this.execute(new SetMyCommands(listOfCommands, new BotCommandScopeDefault(), null));
-        } catch (TelegramApiException e) {
-            log.error(e.getMessage());
-        }
+        this.commandService = commandService;
     }
 
     @Override
@@ -90,6 +78,7 @@ public class MainService extends TelegramLongPollingBot implements MessageSender
             Long chatId = msg.getChatId();
             String text = msg.getText();
             UserRole role = this.userRoleService.defineUserRoleByTelegramId(telegramId);
+            updateUserCommands(chatId, role);
 
             if (role == UserRole.NOT_REGISTERED) {
                 switch (text) {
@@ -105,13 +94,13 @@ public class MainService extends TelegramLongPollingBot implements MessageSender
                 }
             } else if (role == UserRole.TEACHER) {
                 switch (text) {
-                    case "/help" -> this.helpService.handle(chatId);
+                    case "/help" -> this.helpService.handleTeacherMessage(chatId);
                     case "/edit_personal_info" -> this.editService.editPersonalInfo(telegramId, chatId);
                     case "/create_group" -> this.groupService.startGroupCreation(telegramId, chatId);
                     case "/add_pupil_to_group" ->
                             this.groupService.startAddPupilToGroup(telegramId, chatId); // такой себе
                     case "/show_join_requests" -> this.groupService.showJoinGroupRequests(telegramId, chatId);
-                    case "/remove_pupil" -> this.groupService.showAllGroupsByTeacherId(telegramId, chatId);
+                    case "/remove_pupil_from_group" -> this.groupService.showAllGroupsByTeacherId(telegramId, chatId);
                     case "/set_homework" -> this.homeworkService.askGroupForSettingHomework(telegramId, chatId);
                     default -> {
                         if (this.editService.isEditing(telegramId)) {
@@ -129,7 +118,7 @@ public class MainService extends TelegramLongPollingBot implements MessageSender
                 }
             } else if (role == UserRole.PUPIL) {
                 switch (text) {
-                    case "/help" -> this.helpService.handle(chatId);
+                    case "/help" -> this.helpService.handlePupilMessage(chatId);
                     case "/edit_personal_info" -> this.editService.editPersonalInfo(telegramId, chatId);
                     case "/join_group" -> this.groupService.askGroupToJoinSubject(chatId);
                     case "/homework" -> this.homeworkService.showHomework(telegramId, chatId);
@@ -220,6 +209,14 @@ public class MainService extends TelegramLongPollingBot implements MessageSender
             execute(message);
         } catch (TelegramApiException e) {
             log.error("Cannot send the message", e);
+        }
+    }
+
+    private void updateUserCommands(Long chatId, UserRole role) {
+        try {
+            execute(this.commandService.buildCommands(chatId, role));
+        } catch (TelegramApiException e) {
+            log.error("Cannot set commands", e);
         }
     }
 
